@@ -5,13 +5,13 @@
     "plugins": [],
     "settings": {
       "secrets": {
-        "FLUX_API_KEY": "b1fb16af-b812-496c-99a6-0762e4f0e4c3",
-        "BRAVE_API_KEY": "BSAe6Ot4A9sVqwUvgH9W1_PrDV_n6YO",
-        "TAVILY_API_KEY": "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", 
-        "SERPER_API_KEY": "407a2dfdb2914bae7243186542ff73faaeeb0d69",
-        "EXA_API_KEY": "52abb078-c3f0-4197-8186-959dd6056468",
-        "FIRECRAWL_API_KEY": "fc-9d9a0ebb0adf423680815c4274d592b7",
-        "ANTHROPIC_API_KEY": "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"
+        "FLUX_API_KEY": "${FLUX_API_KEY}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}",
+        "TAVILY_API_KEY": "${TAVILY_API_KEY}", 
+        "SERPER_API_KEY": "${SERPER_API_KEY}",
+        "EXA_API_KEY": "${EXA_API_KEY}",
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
       },
       "voice": {
         "model": "en_US-female-medium"
