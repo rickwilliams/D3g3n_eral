@@ -70,7 +70,7 @@
     }
   },
   "engines": {
-    "node": "23.3.0"
+    "node": ">=23.3.0"
   },
   "dependencies": {
     "@0glabs/0g-ts-sdk": "0.2.1",
@@ -91,7 +91,8 @@
     "ollama-ai-provider": "0.16.1",
     "optional": "0.1.4",
     "pnpm": "9.15.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "supabase": "^2.12.1"
   },
   "packageManager": "pnpm@9.15.0",
   "workspaces": [

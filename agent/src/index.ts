@@ -745,7 +745,7 @@ function initializeDatabase(dataDir: string) {
             });
 
         return db;
-    } else if (process.env.PGLITE_DATA_DIR) {
+    } else if (process.env.PGLITE_DATA_DIR && process.env.PGLITE_DATA_DIR.trim() !== "" && !process.env.PGLITE_DATA_DIR.includes("if selecting")) {
         elizaLogger.info("Initializing PgLite adapter...");
         // `dataDir: memory://` for in memory pg
         const db = new PGLiteDatabaseAdapter({
@@ -1398,8 +1398,15 @@ async function startAgent(
 
         await db.init();
 
+        const cacheStoreValue = (process.env.CACHE_STORE ?? CacheStore.DATABASE).split('#')[0].trim();
+        console.log('Debug - CACHE_STORE value:', {
+            raw: process.env.CACHE_STORE,
+            processed: cacheStoreValue,
+            default: CacheStore.DATABASE
+        });
+
         const cache = initializeCache(
-            process.env.CACHE_STORE ?? CacheStore.DATABASE,
+            cacheStoreValue,
             character,
             "",
             db

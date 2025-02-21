@@ -1,3 +1,8 @@
+/**
+ * API Client for ElizaOS
+ * Handles all communication with the ElizaOS server including file uploads
+ */
+
 import type { UUID, Character } from "@elizaos/core";
 
 const BASE_URL = `http://localhost:${import.meta.env.VITE_SERVER_PORT}`;
@@ -64,6 +69,35 @@ const fetcher = async ({
 };
 
 export const apiClient = {
+    /**
+     * Upload a file (primarily for avatar images)
+     * @param file - The file to upload (must be an image under 3MB)
+     * @returns Promise<string> - The URL of the uploaded file
+     * 
+     * The file will be:
+     * 1. Validated (size & type)
+     * 2. Processed to 512x512
+     * 3. Stored using configured storage provider
+     * 4. URL returned for use in character config
+     */
+    uploadFile: async (file: File): Promise<string> => {
+        // Check file size (3MB limit)
+        if (file.size > 3 * 1024 * 1024) {
+            throw new Error("File size exceeds 3MB limit");
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetcher({
+            url: "/upload",
+            method: "POST",
+            body: formData,
+            headers: {} // Let browser set correct multipart boundary
+        });
+
+        return response.url;
+    },
     sendMessage: (
         agentId: string,
         message: string,
@@ -106,5 +140,5 @@ export const apiClient = {
             method: "POST",
             body: formData,
         });
-    },
+    }
 };

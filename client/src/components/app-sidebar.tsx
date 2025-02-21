@@ -16,7 +16,7 @@ import {
 import { apiClient } from "@/lib/api";
 import { NavLink, useLocation } from "react-router";
 import type { UUID } from "@elizaos/core";
-import { Book, Cog, User } from "lucide-react";
+import { Book, Cog, User, Plus } from "lucide-react";
 import ConnectionStatus from "./connection-status";
 
 export function AppSidebar() {
@@ -43,15 +43,20 @@ export function AppSidebar() {
                                     height="100%"
                                     className="size-7"
                                 />
-
                                 <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-semibold">
-                                        ElizaOS
-                                    </span>
+                                    <span className="font-semibold">ElizaOS</span>
                                     <span className="">v{info?.version}</span>
                                 </div>
                             </NavLink>
                         </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <NavLink to="/create">
+                            <SidebarMenuButton>
+                                <Plus className="size-4" />
+                                <span>New Character</span>
+                            </SidebarMenuButton>
+                        </NavLink>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>

@@ -18,6 +18,7 @@ import type { TeeLogQuery, TeeLogService } from "@elizaos/plugin-tee-log";
 import { REST, Routes } from "discord.js";
 import type { DirectClient } from ".";
 import { validateUuid } from "@elizaos/core";
+import { handleFileUpload } from "./upload";
 
 interface UUIDParams {
     agentId: UUID;
@@ -453,6 +454,8 @@ export function createApiRouter(
             res.status(404).json({ error: "Agent not found" });
         }
     });
+
+    router.post("/upload", handleFileUpload);
 
     return router;
 }
