@@ -33,8 +33,13 @@ export default function Home() {
                             <CardTitle>{agent?.name}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="rounded-md bg-muted aspect-square w-full grid place-items-center">
-                                <div className="text-6xl font-bold uppercase">
+                            <div className="rounded-md bg-muted aspect-square w-full grid place-items-center relative overflow-hidden">
+                                <img 
+                                    src={`/${agent.name}.jpg`}
+                                    alt={agent.name}
+                                    className="absolute inset-0 w-full h-full object-cover opacity-50"
+                                />
+                                <div className="text-6xl font-bold uppercase relative z-10">
                                     {formatAgentName(agent?.name)}
                                 </div>
                             </div>
