@@ -9,7 +9,7 @@
     "build-docker": "turbo run build",
     "cleanstart": "if [ -f agent/data/db.sqlite ]; then rm agent/data/db.sqlite; fi && pnpm --filter \"@elizaos/agent\" start --isRoot",
     "cleanstart:debug": "if [ -f agent/data/db.sqlite ]; then rm agent/data/db.sqlite; fi && cross-env NODE_ENV=development VERBOSE=true DEFAULT_LOG_LEVEL=debug DEBUG=eliza:* pnpm --filter \"@elizaos/agent\" start --isRoot",
-    "start": "pnpm --filter \"@elizaos/agent\" start --isRoot",
+    "start": "NODE_OPTIONS='--max-old-space-size=8192' pnpm --filter \"@elizaos/agent\" start --isRoot",
     "start:client": "pnpm --dir client dev",
     "start:debug": "cross-env NODE_ENV=development VERBOSE=true DEFAULT_LOG_LEVEL=debug DEBUG=eliza:* pnpm --filter \"@elizaos/agent\" start --isRoot",
     "dev": "bash ./scripts/dev.sh",
@@ -64,7 +64,8 @@
       "axios@>=0.8.1 <0.28.0": ">=0.28.0",
       "undici@>=6.0.0 <6.21.1": ">=6.21.1",
       "path-to-regexp@<0.1.12": ">=0.1.12",
-      "secp256k1": "5.0.1"
+      "secp256k1": "5.0.1",
+      "sharp": "0.32.6"
     }
   },
   "engines": {
@@ -84,7 +85,6 @@
     "ollama-ai-provider": "0.16.1",
     "optional": "0.1.4",
     "pnpm": "9.15.0",
-    "sharp": "0.33.5",
     "ws": "8.18.0",
     "zod": "3.24.1"
   },
