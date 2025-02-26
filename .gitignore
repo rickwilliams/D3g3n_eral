@@ -97,5 +97,15 @@ ton_nft_images/
 ton_nft_images/*
 
 # Agent configurations and secrets
-/agents/**/secrets.json
+/characters/**/secrets.json
 **/*secrets.json
+
+# Installed plugins
+packages/adapter-supabase/
+packages/client-auto/
+packages/client-twitter/
+packages/plugin-image-generation/
+packages/plugin-twitter/
+packages/plugin-web-search/
+
+@characters
