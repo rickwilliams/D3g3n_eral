@@ -1,0 +1,118 @@
+---
+description: Guidelines for installing and updating Shadcn UI components in the ElizaOS project
+globs: **/*.tsx, **/*.ts, components.json, tailwind.config.ts, index.css
+alwaysApply: false
+---
+ ---
+description: Guidelines for installing and updating Shadcn UI components in the ElizaOS project
+globs: "**/*.tsx, **/*.ts, components.json, tailwind.config.ts, index.css"
+---
+
+# Shadcn UI Component Installation Guidelines
+
+## Overview
+
+ElizaOS uses Shadcn UI components with a Stone-themed New York style. This project has a specific component structure that must be maintained when adding or updating components.
+
+## 🚨 CRITICAL INSTRUCTIONS FOR COMPONENT INSTALLATION 🚨
+
+### Project Structure
+
+- Components MUST be installed in `client/src/components/ui/`
+- Path aliases are configured as follows:
+  - In TypeScript: `"@/*": ["./src/*"]` (tsconfig.app.json)
+  - In Vite: `"@": path.resolve(__dirname, "./src")` (vite.config.ts)
+
+### Installing New Components
+
+When installing new Shadcn UI components:
+
+```bash
+# ✅ CORRECT: Use --cwd flag to specify component location
+pnpm dlx shadcn@latest add button --cwd client/src
+
+# ❌ INCORRECT: This creates components in a literal @/ directory
+pnpm dlx shadcn@latest add button
+```
+
+### Theme Configuration
+
+- Theme style: New York
+- Base color: Stone
+- CSS variables are defined in `client/src/index.css`
+
+## COMMON PITFALLS
+
+### Literal `@/` Directory Creation
+
+The Shadcn CLI might create components in a literal `@/` directory instead of using the path alias. If this happens:
+
+1. Check for components created in `client/@/components/ui/`
+2. Copy them to the correct location: `client/src/components/ui/`
+3. Remove the incorrectly created `@/` directory
+
+### Import Path Issues
+
+Ensure components are imported using the alias format:
+
+```tsx
+// ✅ CORRECT: Use the alias path
+import { Button } from "@/components/ui/button"
+
+// ❌ INCORRECT: Using relative paths can cause issues with TypeScript
+import { Button } from "./button"
+```
+
+## TROUBLESHOOTING STEPS
+
+If TypeScript cannot find components:
+
+1. Verify path aliases in `vite.config.ts` are correctly set to:
+   ```ts
+   "@": path.resolve(__dirname, "./src")
+   ```
+
+2. Make sure the component exists in `client/src/components/ui/`
+
+3. Restart the TypeScript server:
+   ```bash
+   pnpm exec tsc --noEmit
+   ```
+
+4. Check for duplicated components or incorrect import paths
+
+## IMPLEMENTATION STATUS
+
+The following components have been installed:
+- alert
+- avatar
+- badge
+- breadcrumb
+- button
+- card
+- command
+- data-table
+- dialog
+- dropdown-menu
+- form
+- hover-card
+- input
+- label
+- popover
+- progress
+- scroll-area
+- select
+- separator
+- sheet
+- sidebar
+- skeleton
+- tabs
+- textarea
+- toast
+- tooltip
+
+## COMPONENT CUSTOMIZATION
+
+When updating component styles, modify:
+- CSS variables in `client/src/index.css`
+- Component variants in the respective component file
