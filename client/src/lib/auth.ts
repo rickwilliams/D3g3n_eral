@@ -1,7 +1,7 @@
 /**
  * Authentication utilities for integrating Clerk with Supabase
  */
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { useAuth } from '@clerk/clerk-react';
 /**
  * Configuration options for Clerk authentication
@@ -25,28 +25,47 @@ export function getClerkPublishableKey(): string {
  * Create a Supabase client with the user's JWT token from Clerk
  */
 export async function createSupabaseClient() {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase credentials');
-  }
-  
-  // First, try to get the user's token from the Clerk session
-  const token = await getUserToken();
-  
-  // Create a Supabase client with the token if available
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: token 
-        ? { Authorization: `Bearer ${token}` }
-        : undefined
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase credentials from environment variables');
+      throw new Error('Missing Supabase credentials');
     }
-  });
+    
+    // Get the token if available
+    const token = await getUserToken();
+    
+    // Create a Supabase client
+    return createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        global: {
+          headers: token 
+            ? { Authorization: `Bearer ${token}` }
+            : undefined
+        },
+        cookies: {
+          getAll() {
+            return [];
+          },
+          setAll() {
+            // Client-side cookies are handled by the browser
+            return;
+          }
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Error creating Supabase client:', error);
+    throw new Error(`Failed to create Supabase client: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**
- * Get the user's JWT token for Supabase from Clerk
+ * Hook to get the Supabase token from Clerk
  * This function should be used inside a component with access to Clerk's hooks
  */
 export function useSupabaseToken() {
@@ -68,30 +87,66 @@ export function useSupabaseToken() {
   return { getSupabaseToken };
 }
 
+// Store a reference to getToken if available
+let _getTokenFn: ((opts?: {template?: string}) => Promise<string | null>) | null = null;
+let _isSignedIn: boolean | null = null;
+
+/**
+ * Sets up token retrieval for non-component contexts
+ * This function should be called from a component with access to Clerk's auth context
+ * and it now receives the auth parameters directly
+ */
+export function setupTokenRetrieval(
+  getToken: ((opts?: {template?: string}) => Promise<string | null>),
+  isSignedIn: boolean
+): boolean {
+  try {
+    if (!getToken) {
+      console.warn('Token retrieval function is undefined');
+      return false;
+    }
+    
+    _getTokenFn = getToken;
+    _isSignedIn = isSignedIn === undefined ? false : isSignedIn;
+    return true;
+  } catch (error) {
+    console.warn('Failed to set up token retrieval - invalid parameters', error);
+    return false;
+  }
+}
+
 /**
  * Get the user's JWT token for Supabase
- * This is a standalone version for non-hook contexts
+ * Will work in component contexts and in contexts where setupTokenRetrieval has been called
  */
 export async function getUserToken(): Promise<string | null> {
-  // This needs to be called within a React component that has access to Clerk's context
-  // Outside of React components, this will return null
-  return null;
+  try {
+    if (_getTokenFn && _isSignedIn) {
+      try {
+        return await _getTokenFn({ template: 'supabase' });
+      } catch (error) {
+        console.error('Error getting user token from stored function:', error);
+        return null;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting user token:', error);
+    return null;
+  }
 }
 
 /**
  * Function to check if a user is authenticated
- * TODO: Implement using Clerk's session management
  */
 export function isAuthenticated(): boolean {
-  // This is a placeholder. Implement using Clerk's session management
-  return false;
+  return _isSignedIn === true; // Explicitly check for true to handle undefined cases
 }
 
 /**
  * Function to get the current user
- * TODO: Implement using Clerk's user management
  */
 export function getCurrentUser() {
-  // This is a placeholder. Implement using Clerk's user management
-  return null;
+  return null; // Will be implemented with Clerk's user management
 } 

@@ -131,6 +131,14 @@ eliza/
 ├── packages/                        # Core packages and extensions
 │   ├── core/                        # Core Eliza functionality
 │   ├── cli/                         # Command line interface
+│   ├── user-management-api/         # Authentication and user management service
+│   │   ├── src/                     # Source code for the API
+│   │   │   ├── webhooks/            # Webhook handlers for Clerk events
+│   │   │   ├── utils/               # Utility functions for Supabase, etc.
+│   │   │   ├── index.ts             # Main Express server setup
+│   │   │   └── test-webhook-*.ts    # Test scripts for webhook verification
+│   │   ├── dist/                    # Compiled JavaScript output
+│   │   └── package.json             # Package configuration
 │   ├── client-*/                    # Client implementations
 │   │   ├── client-auto/             # Automated client
 │   │   ├── client-direct/           # Direct interaction client
@@ -145,7 +153,124 @@ eliza/
 │       └── adapter-supabase/        # Supabase integration
 ├── tests/                           # Test suites and fixtures
 ├── scripts/                         # Utility and automation scripts
+│   └── MyApp.sh                     # Multi-service startup script with logging
 ├── characters/                      # Character definitions and configs
 ├── i18n/                            # Internationalization files
+├── rules/                           # Project documentation and best practices
+│   ├── clerk-supabase-integration.mdc # Auth integration patterns
+│   ├── multi-service-startup.mdc    # Service management guidelines
+│   └── ngrok-webhook-testing.mdc    # Webhook testing best practices
+├── logs/                            # Application logs directory
 └── patches/                         # Custom patches and fixes
 ```
+
+## Authentication & Database Integration
+### Clerk and Supabase Integration
+- **Architecture**:
+  - Three-tier architecture combining Clerk for authentication and Supabase for data storage
+  - Client Application (React) - handles UI and user interaction
+  - User Management API (Express.js) - manages authentication flow and webhook handling
+  - Supabase Database - stores user data with Row-Level Security (RLS) policies
+
+- **User Management API (packages/user-management-api)**:
+  - **Purpose**: Acts as the critical bridge between Clerk authentication and Supabase database
+  - **Technology Stack**:
+    - Express.js server (v4.18.2)
+    - TypeScript with tsup for bundling
+    - Svix (v1.16.0) for webhook signature verification
+    - Supabase JS client (v2.39.0) for database operations
+  - **Key Components**:
+    - Webhook handler that processes Clerk user events (creation, updates, deletion)
+    - Health check endpoint for monitoring service status
+    - Development test endpoint for simulating webhooks locally
+    - Utility functions for Supabase client initialization
+  - **Database Structure**:
+    - Uses an `accounts` table in Supabase with fields:
+      - `id`: Unique identifier (using Clerk user ID)
+      - `email`: User's email address
+      - `name`: User's full name
+      - `username`: Generated from email or provided username
+      - `avatarUrl`: Profile image URL
+      - `user_id`: Clerk user ID (critical for RLS policies)
+  - **Startup Process**:
+    - Runs on port 4000 by default (configurable via USER_API_PORT)
+    - Requires environment variables for Clerk webhook secret and Supabase connection
+    - Supports development mode with test endpoints enabled
+
+- **Authentication Flow**:
+  - Clerk handles user registration, login, and session management
+  - Express.js API receives Clerk webhooks when user events occur:
+    1. `user.created`: Creates a corresponding record in Supabase accounts table
+    2. `user.updated`: Updates user information in Supabase to maintain synchronization
+    3. `user.deleted`: Removes the user record from Supabase
+  - Webhook payloads are verified using the Svix library with the CLERK_WEBHOOK_SECRET
+  - User data is extracted from the webhook payload and mapped to the Supabase schema
+
+- **JWT Configuration**:
+  - Custom JWT template required for Supabase compatibility
+  - Critical fields must include:
+    ```json
+    {
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "user@example.com",
+      "user_id": "user_abc123",
+      "app_metadata": {
+        "provider": "clerk"
+      }
+    }
+    ```
+  - Important implementation detail: The `sub` claim is protected in Clerk and cannot be used; `user_id` field is used instead for Supabase Row-Level Security policies
+  - The JWT is configured in the Clerk dashboard under JWT Templates, not in the code itself
+
+- **Webhook Implementation**:
+  - Express.js webhook handler at '/api/webhooks/clerk' endpoint
+  - Secure webhook verification using Svix library
+  - Detailed validation of webhook signature headers:
+    - 'svix-id'
+    - 'svix-timestamp'
+    - 'svix-signature'
+  - Comprehensive error handling with appropriate HTTP status codes
+  - Development test endpoint at '/api/test/webhooks/clerk' (only in non-production)
+  - Advanced test script (`test-webhook-simple.ts`) for:
+    - Automatic ngrok URL detection
+    - Diagnostic checks for local server and ngrok tunnel health
+    - Comprehensive logging with timestamps
+    - Detailed error reporting
+
+- **Row-Level Security**:
+  - Supabase RLS policies ensure users can only access their own data
+  - Policies use JWT claims to identify the authenticated user
+  - Critical pattern: `auth.jwt() ->> 'user_id' = user_id`
+  - Enables secure multi-tenant architecture where users can only see and modify their own records
+
+### Development Tools and Practices
+- **Logging Infrastructure**:
+  - Log directory for persistent logs with timestamps
+  - Dual logging to console and file for comprehensive debugging
+  - Service-specific log sections for easier troubleshooting
+
+- **Startup Sequence**:
+  - Process management with proper cleanup
+  - Service health verification
+  - Dependency ordering for multi-service startup
+  - Environment variables management
+  - Connectivity testing between services
+
+- **Webhook Testing**:
+  - Includes two test utilities:
+    - `test-webhook.ts`: Advanced testing with Svix signature generation
+    - `test-webhook-simple.ts`: Simplified testing with automatic ngrok detection
+  - Automatic detection of ngrok URLs from both free (`*.ngrok-free.app`) and paid accounts
+  - Comprehensive diagnostics for troubleshooting:
+    - Local API server health check
+    - Ngrok tunnel verification
+    - Detailed error logging with request/response information
+  - All test results logged to timestamped files in the `logs` directory
+
+- **Best Practices Documentation**:
+  - Rules directory with .mdc files for development guidelines:
+    - `clerk-supabase-integration.mdc` - Auth integration patterns
+    - `multi-service-startup.mdc` - Service management guidelines
+    - `ngrok-webhook-testing.mdc` - Webhook testing best practices
+  - Comprehensive troubleshooting guides for common issues

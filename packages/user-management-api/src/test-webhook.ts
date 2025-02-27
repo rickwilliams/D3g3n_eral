@@ -15,6 +15,10 @@ interface WebhookHeaders {
 dotenv.config();
 
 async function main() {
+  // Get the base URL from command line or use default
+  const baseUrl = process.argv[2] || 'https://499c57ccc7cf.ngrok.app';
+  console.log(`Using base URL: ${baseUrl}`);
+  
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
   if (!webhookSecret) {
     console.error('CLERK_WEBHOOK_SECRET is not set');
@@ -73,14 +77,14 @@ async function main() {
   try {
     // First, let's test if the server is reachable
     try {
-      const healthCheck = await axios.get('https://wheezing-worm-lightly.ngrok-free.app/health');
+      const healthCheck = await axios.get(`${baseUrl}/health`);
       console.log('Health check response:', healthCheck.status, healthCheck.data);
     } catch (error: any) {
       console.error('Health check failed:', error.message);
     }
 
     // Send the webhook to your local server
-    const response = await axios.post('https://wheezing-worm-lightly.ngrok-free.app/api/webhooks/clerk', 
+    const response = await axios.post(`${baseUrl}/api/webhooks/clerk`, 
       payload,
       {
         headers: {
