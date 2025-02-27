@@ -1,0 +1,33 @@
+{
+  "name": "eliza",
+  "version": "0.25.8",
+  "description": "AI character creation and management platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "NODE_OPTIONS='--max-old-space-size=8192' pnpm --filter \"@elizaos/agent\" start --isRoot",
+    "start:client": "cd client && pnpm dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean"
+  },
+  "keywords": [
+    "ai",
+    "character",
+    "management",
+    "llm",
+    "chatbot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=23.3.0",
+    "pnpm": ">=9.0.0"
+  },
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "agent",
+    "client"
+  ]
+} 
