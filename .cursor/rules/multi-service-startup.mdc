@@ -1,0 +1,204 @@
+---
+description: This rule documents how to create robust startup scripts for multi-service applications like ElizaOS. It covers process management, service health verification, comprehensive logging, environment variables, and connectivity testing. It also includes troubleshooting guidance for common issues.
+globs: 
+alwaysApply: false
+---
+ ## Overview
+
+This document provides guidelines for creating robust startup scripts for multi-service applications like ElizaOS. These scripts help ensure consistent startup sequences, proper dependency ordering, and clean shutdown of all services.
+
+## Core Architecture
+
+### Script Components
+
+A complete multi-service startup script should include:
+
+1. **Process tracking**: Maintain a list of started processes for cleanup
+2. **Signal handling**: Properly handle interrupt signals (Ctrl+C)
+3. **Health verification**: Confirm each service is running correctly
+4. **Dependency ordering**: Start services in the correct sequence
+5. **Logging**: Keep comprehensive logs of the startup process
+
+## Implementation Guidelines
+
+### 1. Process Management
+
+Track all started processes for proper cleanup:
+
+```bash
+# Store process IDs in an array
+PIDS=()
+
+# Add processes to the array as they're started
+some_command &
+SOME_PID=$!
+PIDS+=($SOME_PID)
+
+# Clean up all processes on exit
+cleanup() {
+  for pid in "${PIDS[@]}"; do
+    if ps -p $pid > /dev/null; then
+      kill $pid 2>/dev/null
+    fi
+  done
+}
+
+# Register the cleanup function for termination signals
+trap cleanup SIGINT SIGTERM
+```
+
+### 2. Service Health Verification
+
+Always verify services are running before proceeding:
+
+```bash
+# Start a service
+start_service &
+SERVICE_PID=$!
+PIDS+=($SERVICE_PID)
+
+# Wait for service to initialize
+sleep 3
+
+# Verify the service is running
+HEALTH_RESULT=$(curl -s http://localhost:4000/health 2>&1)
+if [ $? -ne 0 ]; then
+  echo "Service failed to start correctly!"
+  echo "Check the logs for errors."
+else
+  echo "Service started successfully"
+  echo "Health check response: $HEALTH_RESULT"
+fi
+```
+
+### 3. Comprehensive Logging
+
+Implement dual console/file logging for all script activity:
+
+```bash
+# Set up logging
+LOG_DIR="logs"
+mkdir -p $LOG_DIR
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+LOG_FILE="$LOG_DIR/startup_$TIMESTAMP.log"
+
+# Function to log and display messages
+log() {
+  echo -e "$1" | tee -a "$LOG_FILE"
+}
+
+log "Starting application suite at $(date)"
+log "Logging all output to: $LOG_FILE"
+
+# Capture service output to the log file
+(service_command) 2>&1 | tee -a "$LOG_FILE" &
+SERVICE_PID=$!
+PIDS+=($SERVICE_PID)
+```
+
+### 4. Environment Variables
+
+Set environment variables consistently for all services:
+
+```bash
+# Set environment for development
+export NODE_ENV=development
+export DEBUG=app:*
+export OTHER_VAR=value
+
+# Start services with the environment
+(cd service_dir && pnpm start) 2>&1 | tee -a "$LOG_FILE" &
+```
+
+### 5. Connectivity Testing
+
+Test connectivity between interdependent services:
+
+```bash
+# Test API connectivity
+log "Testing API connection..."
+API_RESULT=$(curl -s http://localhost:4000/health 2>&1 || echo "failed")
+if [[ $API_RESULT == *"ok"* ]]; then
+  log "API connection verified and working!"
+else
+  log "Could not verify API connection. Check logs for errors."
+  log "Response: $API_RESULT"
+fi
+```
+
+## Common Patterns
+
+### Starting in the Correct Order
+
+Use this pattern to start services in the correct order with verification:
+
+1. Start core database or infrastructure services first
+2. Verify infrastructure services are running correctly
+3. Start API or middleware services
+4. Verify API services are operational
+5. Start client applications that depend on APIs
+6. Start monitoring or auxiliary services last
+
+### Handling Existing Services
+
+Check if services are already running before starting new instances:
+
+```bash
+# Check if service is already running
+if pgrep -x "service_name" > /dev/null; then
+  log "Service is already running. Using existing instance."
+else
+  start_service &
+  SERVICE_PID=$!
+  PIDS+=($SERVICE_PID)
+fi
+```
+
+### Graceful Shutdown
+
+Implement graceful shutdown in reverse dependency order:
+
+```bash
+cleanup() {
+  log "Shutting down all processes..."
+  
+  # Stop in reverse order - client first, then API, then database
+  for pid in "${PIDS[@]}"; do
+    if ps -p $pid > /dev/null; then
+      log "Stopping process with PID ${pid}"
+      kill $pid 2>/dev/null
+      # Give process time to exit gracefully
+      sleep 1
+      # Force kill if still running
+      if ps -p $pid > /dev/null; then
+        log "Process ${pid} still running, force killing..."
+        kill -9 $pid 2>/dev/null
+      fi
+    fi
+  done
+}
+```
+
+## Troubleshooting Common Issues
+
+### Services Start But Die Immediately
+
+- Check for port conflicts using: `lsof -i :<port>`
+- Verify environment variables are set correctly
+- Check service logs for startup errors
+
+### Cleanup Doesn't Work Properly
+
+- Ensure PID capture uses `$!` immediately after starting the background process
+- Verify trap is registered before starting any processes
+- Use `ps -p $pid` to confirm processes are still running before attempting to kill
+
+### Child Processes Not Terminating
+
+For services that spawn child processes:
+- Use process groups with `kill -- -$pid` to terminate the entire process tree
+- Consider using `pkill -P $pid` to kill child processes first
+
+## Implementation Example
+
+See `scripts/MyApp.sh` for a reference implementation that follows these guidelines.

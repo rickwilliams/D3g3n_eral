@@ -1,10 +1,5 @@
 ---
 description: Guidelines for installing and updating Shadcn UI components in the ElizaOS project
-globs: **/*.tsx, **/*.ts, components.json, tailwind.config.ts, index.css
-alwaysApply: false
----
- ---
-description: Guidelines for installing and updating Shadcn UI components in the ElizaOS project
 globs: "**/*.tsx, **/*.ts, components.json, tailwind.config.ts, index.css"
 ---
 
@@ -115,4 +110,4 @@ The following components have been installed:
 
 When updating component styles, modify:
 - CSS variables in `client/src/index.css`
-- Component variants in the respective component file
+- Component variants in the respective component file 

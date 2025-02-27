@@ -1,0 +1,158 @@
+---
+description: This rule explains best practices for setting up and testing webhooks in your projects, especially with ngrok. It covers the domain pattern issue we resolved, proper URL detection methods, health check verification, and comprehensive logging for webhooks.
+globs: 
+alwaysApply: false
+---
+ This document outlines best practices for setting up and testing webhooks in ElizaOS projects, particularly when using ngrok for local development. Following these guidelines will help prevent common issues and provide a reliable testing workflow.
+
+## Ngrok URL Detection
+
+### Domain Pattern Awareness
+
+- Ngrok uses different domain patterns based on account type:
+  - Free accounts: `*.ngrok-free.app`
+  - Paid accounts: `*.ngrok.app`
+  - Both formats should be supported in scripts
+
+### Robust URL Extraction
+
+Always use a domain-agnostic approach to extract ngrok URLs from API responses:
+
+```bash
+# ✅ CORRECT: Extract URL from JSON response
+TUNNELS_JSON=$(curl -s http://127.0.0.1:4040/api/tunnels)
+NGROK_URL=$(echo "$TUNNELS_JSON" | grep -o '"public_url":"https://[^"]*"' | sed 's/"public_url":"//g' | sed 's/"//g' | head -n 1)
+
+# ❌ INCORRECT: Hardcoding specific domain patterns
+NGROK_URL=$(curl -s http://127.0.0.1:4040/api/tunnels | grep -o "https://[^\"]*\.ngrok-free.app")
+```
+
+In TypeScript:
+
+```typescript
+// ✅ CORRECT: Extract URL from tunnel object
+const tunnelsResponse = await axios.get('http://localhost:4040/api/tunnels');
+const tunnels = tunnelsResponse.data.tunnels || [];
+const httpsTunnel = tunnels.find((t: any) => t.proto === 'https');
+if (httpsTunnel) {
+  ngrokUrl = httpsTunnel.public_url;
+}
+
+// ❌ INCORRECT: Using regex with specific domain patterns
+const tunnelsText = await axios.get('http://localhost:4040/api/tunnels');
+const match = tunnelsText.match(/https:\/\/[^"]*\.ngrok-free\.app/);
+if (match) {
+  ngrokUrl = match[0];
+}
+```
+
+## Webhook Testing Architecture
+
+### Test Endpoints for Development
+
+Create separate test endpoints that bypass signature verification for local development:
+
+```typescript
+// In your Express router:
+if (process.env.NODE_ENV === 'development') {
+  router.post('/api/test/webhooks/:provider', async (req, res) => {
+    // Bypass signature verification for testing
+    try {
+      await handleWebhookEvent(req.body);
+      return res.status(200).json({ success: true, message: "Test webhook received" });
+    } catch (error) {
+      console.error('Error handling test webhook:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  });
+}
+```
+
+### Health Check Endpoints
+
+Always implement health check endpoints to verify service connectivity:
+
+```typescript
+// Express health endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'user-management-api' });
+});
+```
+
+### Testing Webhook Logic
+
+Implement a robust webhook test script that:
+1. Checks local server health
+2. Validates ngrok tunnel connectivity
+3. Performs diagnostics before sending test requests
+4. Provides clear error messages
+
+## Comprehensive Logging for Webhooks
+
+### Setup Logging
+
+Implement dual console/file logging for webhook testing:
+
+```typescript
+// Set up logging
+const LOG_DIR = path.join(process.cwd(), '..', '..', 'logs');
+if (!fs.existsSync(LOG_DIR)) {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
+}
+const TIMESTAMP = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
+const LOG_FILE = path.join(LOG_DIR, `webhook_test_${TIMESTAMP}.log`);
+
+// Logger function that writes to console and file
+function log(message: string) {
+  console.log(message);
+  fs.appendFileSync(LOG_FILE, message + '\n');
+}
+```
+
+### Diagnostic Logging
+
+Log diagnostic information to help with troubleshooting:
+
+```typescript
+// Detailed error logging
+try {
+  // API call
+} catch (error) {
+  log(`Error: ${error.message}`);
+  
+  // Log detailed error info to file only
+  fs.appendFileSync(LOG_FILE, `\nDetailed error:\n${JSON.stringify(error, null, 2)}\n`);
+  
+  // Provide helpful feedback
+  if (error.code === 'ECONNREFUSED') {
+    log('  → Connection refused. Make sure the server is running.');
+  }
+}
+```
+
+## Common Pitfalls and Solutions
+
+### Ngrok Not Starting Correctly
+
+If ngrok doesn't start correctly:
+- Check if another instance is already running (`ps aux | grep ngrok`)
+- Verify port 4040 is available for the ngrok admin interface
+- Check ngrok authentication status (`ngrok authtoken`)
+
+### Webhook Signature Verification Failures
+
+If production webhooks fail with signature verification errors:
+- Verify the webhook secret matches between your server and the provider dashboard
+- Check for clock drift if timestamps are used in signatures
+- Ensure the raw request body is used for verification (not parsed JSON)
+
+### Connection Issues
+
+If you can't connect to ngrok URLs:
+- Verify the tunnel is active in the ngrok dashboard (http://localhost:4040)
+- Check if your firewall is blocking outgoing connections
+- Try a different ngrok region if international connectivity is an issue
+
+## Implementation Example
+
+See `scripts/MyApp.sh` and `packages/user-management-api/src/test-webhook-simple.ts` for reference implementations that follow these guidelines.
