@@ -1,3 +1,8 @@
+---
+description: This rule explains best practices for setting up and testing webhooks in your projects, especially with ngrok. It covers the domain pattern issue we resolved, proper URL detection methods, health check verification, and comprehensive logging for webhooks.
+globs: 
+alwaysApply: false
+---
 # Ngrok and Webhook Testing Best Practices
 
 ## Overview
