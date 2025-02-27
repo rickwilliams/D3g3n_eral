@@ -3,7 +3,9 @@ description: This rule documents how to create robust startup scripts for multi-
 globs: 
 alwaysApply: false
 ---
- ## Overview
+# Multi-Service Application Startup Script
+
+## Overview
 
 This document provides guidelines for creating robust startup scripts for multi-service applications like ElizaOS. These scripts help ensure consistent startup sequences, proper dependency ordering, and clean shutdown of all services.
 
@@ -201,4 +203,4 @@ For services that spawn child processes:
 
 ## Implementation Example
 
-See `scripts/MyApp.sh` for a reference implementation that follows these guidelines.
+See `scripts/MyApp.sh` for a reference implementation that follows these guidelines. 

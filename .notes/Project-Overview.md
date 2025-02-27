@@ -2,6 +2,8 @@
 ## Brief overview of the project
 - A subscription service enabling you to log-in using Clerk and create new ElizaOS characters based on the ElizaOS character file. These characters are stored in Spuabase. You can create, edit and delete characters when logged in. You can select a character you have created and chat with that character via the web client interface.
 
+PNPM MUST BE USED AT ALL TIMES FOR INSTALLING ADDITONAL CODE
+
 ## Backend/Server-side
 - **Core Runtime**: Node.js v23.3.0 with TypeScript 5.6.3
 - **API Framework**: Express.js v4.21.1
@@ -123,27 +125,27 @@
 ## Project Structure
 ```
 eliza/
-├── agent/                  # Agent configuration and runtime
-├── client/                 # Web client interface
-├── docs/                   # Documentation and guides
-├── packages/               # Core packages and extensions
-│   ├── core/              # Core Eliza functionality
-│   ├── cli/               # Command line interface
-│   ├── client-*/          # Client implementations
-│   │   ├── client-auto/   # Automated client
-│   │   ├── client-direct/ # Direct interaction client
-│   │   └── client-twitter/# Twitter integration
-│   ├── plugin-*/          # Official plugins
-│   │   ├── plugin-bootstrap/      # Bootstrap functionality
-│   │   ├── plugin-image-generation/# Image generation
-│   │   ├── plugin-twitter/        # Twitter integration
-│   │   └── plugin-web-search/     # Web search capability
-│   └── adapter-*/         # Database adapters
-│       ├── adapter-sqlite/# SQLite implementation
-│       └── adapter-supabase/# Supabase integration
-├── tests/                 # Test suites and fixtures
-├── scripts/              # Utility and automation scripts
-├── characters/           # Character definitions and configs
-├── i18n/                # Internationalization files
-└── patches/             # Custom patches and fixes
+├── agent/                           # Agent configuration and runtime
+├── client/                          # Web client interface
+├── docs/                            # Documentation and guides
+├── packages/                        # Core packages and extensions
+│   ├── core/                        # Core Eliza functionality
+│   ├── cli/                         # Command line interface
+│   ├── client-*/                    # Client implementations
+│   │   ├── client-auto/             # Automated client
+│   │   ├── client-direct/           # Direct interaction client
+│   │   └── client-twitter/          # Twitter integration
+│   ├── plugin-*/                    # Official plugins
+│   │   ├── plugin-bootstrap/        # Bootstrap functionality
+│   │   ├── plugin-image-generation/ # Image generation
+│   │   ├── plugin-twitter/          # Twitter integration
+│   │   └── plugin-web-search/       # Web search capability
+│   └── adapter-*/                   # Database adapters
+│       ├── adapter-sqlite/          # SQLite implementation
+│       └── adapter-supabase/        # Supabase integration
+├── tests/                           # Test suites and fixtures
+├── scripts/                         # Utility and automation scripts
+├── characters/                      # Character definitions and configs
+├── i18n/                            # Internationalization files
+└── patches/                         # Custom patches and fixes
 ```

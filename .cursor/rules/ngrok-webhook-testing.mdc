@@ -1,9 +1,8 @@
----
-description: This rule explains best practices for setting up and testing webhooks in your projects, especially with ngrok. It covers the domain pattern issue we resolved, proper URL detection methods, health check verification, and comprehensive logging for webhooks.
-globs: 
-alwaysApply: false
----
- This document outlines best practices for setting up and testing webhooks in ElizaOS projects, particularly when using ngrok for local development. Following these guidelines will help prevent common issues and provide a reliable testing workflow.
+# Ngrok and Webhook Testing Best Practices
+
+## Overview
+
+This document outlines best practices for setting up and testing webhooks in ElizaOS projects, particularly when using ngrok for local development. Following these guidelines will help prevent common issues and provide a reliable testing workflow.
 
 ## Ngrok URL Detection
 
@@ -155,4 +154,4 @@ If you can't connect to ngrok URLs:
 
 ## Implementation Example
 
-See `scripts/MyApp.sh` and `packages/user-management-api/src/test-webhook-simple.ts` for reference implementations that follow these guidelines.
+See `scripts/MyApp.sh` and `packages/user-management-api/src/test-webhook-simple.ts` for reference implementations that follow these guidelines. 
