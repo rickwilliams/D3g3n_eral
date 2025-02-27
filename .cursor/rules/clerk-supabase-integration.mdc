@@ -1,0 +1,319 @@
+---
+description: This rule provides a complete guide to integrating Clerk authentication with Supabase in Next.js/React applications. It covers JWT configuration, webhook handler implementation, client-side integration, Row-Level Security setup, and common pitfalls with solutions.
+globs: 
+alwaysApply: false
+---
+## Overview
+
+This document outlines best practices for integrating Clerk authentication with Supabase backend in Next.js/React applications. It covers common integration patterns, authentication flows, and typical challenges encountered during implementation.
+
+## Architecture Overview
+
+### Recommended Architecture
+
+For Clerk + Supabase integration, we recommend a three-tier architecture:
+
+1. **Client Application** (Next.js/React)
+   - Handles UI, user interactions, and frontend auth logic
+   - Uses Clerk components for auth UI
+   - Uses Supabase client for data access
+
+2. **Authentication Server** (Express/Node.js)
+   - Handles webhook events from Clerk
+   - Synchronizes user data with Supabase
+   - Provides health check endpoints
+
+3. **Database Layer** (Supabase)
+   - Stores application data
+   - Enforces Row-Level Security (RLS)
+   - Validates JWT tokens from Clerk
+
+## JWT Configuration
+
+### Clerk JWT Template
+
+Configure Clerk to issue JWTs compatible with Supabase:
+
+```json
+{
+  "sub": "{{user.id}}",
+  "aud": "authenticated",
+  "role": "authenticated",
+  "iss": "https://api.clerk.dev/v1/",
+  "exp": "{{exp}}",
+  "user_id": "{{user.id}}"
+}
+```
+
+### Key Settings
+
+- `sub`: Must match the user ID in Supabase
+- `aud`: Must be "authenticated" for Supabase
+- `role`: Should be "authenticated" or a custom role defined in Supabase
+- `exp`: Standard expiration time
+
+## Webhook Handler Implementation
+
+### Essential Webhook Events
+
+Handle these critical Clerk webhook events:
+
+1. `user.created`: Create corresponding user in Supabase
+2. `user.updated`: Update user data in Supabase
+3. `user.deleted`: Delete or deactivate user in Supabase
+
+### Secure Webhook Verification
+
+Always verify webhook signatures:
+
+```typescript
+import { Webhook } from 'svix';
+
+// Express middleware
+export function verifyWebhookSignature(req, res, next) {
+  const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+  
+  if (!webhookSecret) {
+    console.error('Missing webhook secret');
+    return res.status(500).json({ error: 'Server misconfigured' });
+  }
+
+  // Get the signature and timestamp from the headers
+  const svixId = req.headers['svix-id'] as string;
+  const svixTimestamp = req.headers['svix-timestamp'] as string;
+  const svixSignature = req.headers['svix-signature'] as string;
+  
+  // If there are no headers, error out
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    return res.status(400).json({ error: 'Missing webhook headers' });
+  }
+
+  // Create a new Svix instance with your secret
+  const wh = new Webhook(webhookSecret);
+  
+  try {
+    // Verify the payload with the headers
+    const payload = req.body;
+    wh.verify(JSON.stringify(payload), {
+      'svix-id': svixId,
+      'svix-timestamp': svixTimestamp,
+      'svix-signature': svixSignature,
+    });
+    next();
+  } catch (error) {
+    console.error('Error verifying webhook:', error);
+    return res.status(400).json({ error: 'Invalid signature' });
+  }
+}
+```
+
+### Development Test Endpoint
+
+Add a test endpoint for local development:
+
+```typescript
+// Development only webhook testing endpoint
+if (process.env.NODE_ENV === 'development') {
+  router.post('/api/test/webhooks/clerk', async (req, res) => {
+    try {
+      // Process the webhook payload without verification
+      await handleWebhookEvent(req.body);
+      return res.status(200).json({ success: true, message: "Test webhook received" });
+    } catch (error) {
+      console.error('Error handling test webhook:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  });
+}
+```
+
+## Client-Side Integration
+
+### Clerk Provider Setup
+
+Set up ClerkProvider with Supabase token handling:
+
+```tsx
+// ClerkProvider.tsx
+import { ClerkProvider, useAuth } from '@clerk/clerk-react';
+import { useEffect, useState } from 'react';
+import { createSupabaseClient } from '@/lib/supabase';
+
+const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+export const ClientProvider = ({ children }) => {
+  return (
+    <ClerkProvider publishableKey={publishableKey}>
+      <SupabaseTokenProvider>
+        {children}
+      </SupabaseTokenProvider>
+    </ClerkProvider>
+  );
+};
+
+const SupabaseTokenProvider = ({ children }) => {
+  const { getToken, userId } = useAuth();
+  const [supabaseToken, setSupabaseToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (userId) {
+        const token = await getToken({ template: 'supabase' });
+        setSupabaseToken(token);
+      }
+    };
+    
+    fetchToken();
+  }, [userId, getToken]);
+  
+  // Use supabaseToken to initialize Supabase client
+  // ...
+  
+  return children;
+};
+```
+
+### Supabase Client Creation
+
+Create a Supabase client that injects the Clerk JWT:
+
+```typescript
+// lib/supabase.ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export const createSupabaseClient = (supabaseAccessToken?: string) => {
+  const options = {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  };
+  
+  // If we have a supabaseAccessToken, add it to the request
+  if (supabaseAccessToken) {
+    options.global = {
+      headers: {
+        Authorization: `Bearer ${supabaseAccessToken}`,
+      },
+    };
+  }
+  
+  return createClient(supabaseUrl, supabaseAnonKey, options);
+};
+```
+
+### Custom React Hook
+
+Create a custom hook for authenticated Supabase access:
+
+```typescript
+// hooks/useSupabase.ts
+import { useAuth } from '@clerk/clerk-react';
+import { useState, useEffect } from 'react';
+import { createSupabaseClient } from '@/lib/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+export function useSupabase() {
+  const { getToken } = useAuth();
+  const [client, setClient] = useState<SupabaseClient | null>(null);
+  
+  useEffect(() => {
+    const setupClient = async () => {
+      const token = await getToken({ template: 'supabase' });
+      if (token) {
+        const supabase = createSupabaseClient(token);
+        setClient(supabase);
+      }
+    };
+    
+    setupClient();
+  }, [getToken]);
+  
+  return client;
+}
+```
+
+## Row-Level Security Setup
+
+### Basic RLS Policy
+
+Implement these basic RLS policies in Supabase:
+
+```sql
+-- Enable RLS on the table
+ALTER TABLE your_table ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for authenticated users
+CREATE POLICY "Users can view their own data"
+ON your_table
+FOR SELECT
+USING (auth.uid() = user_id);
+
+-- Create policy for insert
+CREATE POLICY "Users can insert their own data"
+ON your_table
+FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+-- Create policy for update
+CREATE POLICY "Users can update their own data"
+ON your_table
+FOR UPDATE
+USING (auth.uid() = user_id);
+```
+
+### Testing RLS Policies
+
+To test RLS policies:
+1. Sign in with Clerk in your application
+2. Get a JWT token using the Supabase template
+3. Make requests to Supabase with this token
+4. Verify that you can only access authorized rows
+
+## Common Pitfalls and Solutions
+
+### JWT Compatibility Issues
+
+If Supabase rejects Clerk JWTs:
+- Verify JWT template matches Supabase requirements exactly
+- Check JWT expiration times are reasonable
+- Ensure `sub` and `user_id` values match
+
+### Missing User Records
+
+If webhook events don't create user records:
+- Check webhook URL is correctly configured in Clerk dashboard
+- Verify webhook secret matches between Clerk and your server
+- Check for webhook signature verification failures in logs
+
+### Race Conditions
+
+To prevent race conditions between auth and data access:
+- Implement retry logic for initial data access after login
+- Use loading states while auth tokens are being acquired
+- Consider a state management solution like React Query
+
+## Testing and Debugging
+
+### Webhook Testing
+
+For effective webhook testing:
+1. Use ngrok to expose local server to the internet
+2. Configure webhook URL in Clerk dashboard to point to ngrok URL
+3. Use the test webhook script to simulate events locally
+
+### Authentication Flow Testing
+
+Test the complete authentication flow:
+1. Register a new user through Clerk UI
+2. Verify webhook creates user in Supabase
+3. Sign in and confirm JWT generation
+4. Test access to protected routes
+5. Test RLS policy enforcement
+
+## Implementation Example
+
+See the ElizaOS project's User Management API and client integration for a complete example.
