@@ -146,4 +146,37 @@ export function ToastAction({
   );
 }
 
+// Add missing components that toaster.tsx is trying to import
+export function ToastClose({ className, ...props }: React.HTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      className={cn(
+        "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-70 transition-opacity hover:text-foreground hover:opacity-100 focus:opacity-100 focus:outline-none",
+        className
+      )}
+      {...props}
+    >
+      <X className="h-4 w-4" />
+      <span className="sr-only">Close</span>
+    </button>
+  );
+}
+
+export function ToastTitle({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("text-sm font-medium", className)} {...props} />;
+}
+
+export function ToastDescription({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("text-sm opacity-90", className)} {...props} />;
+}
+
+export function ToastViewport(props: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className="fixed bottom-0 right-0 z-50 flex flex-col p-4 gap-2 max-w-[420px]"
+      {...props}
+    />
+  );
+}
+
 export { ToastContext };

@@ -53,6 +53,48 @@ PNPM MUST BE USED AT ALL TIMES FOR INSTALLING ADDITONAL CODE
   - Sidebars
   - Chat bubbles
   - Skeletons for loading states
+- **Routing**:
+  - **Library**: TanStack Router v0.x
+  - **Architecture**:
+    - Routes defined in `client/src/routes/index.tsx`
+    - Main router configuration and mounting in `client/src/main.tsx`
+    - Route components in `client/src/routes/` directory
+  - **Key Components**:
+    - `rootRoute`: Wraps the entire application with providers
+    - `layoutRoute`: Uses `Outlet` component for nested routes
+    - Individual routes (`indexRoute`, `chatRoute`, etc.) for different pages
+  - **Navigation Pattern**:
+    - Use TanStack Router's `useNavigate` hook:
+      ```typescript
+      import { useNavigate } from "@tanstack/react-router";
+      const navigate = useNavigate();
+      // Navigate to a route
+      navigate({ to: "/" });
+      // With parameters
+      navigate({ to: "/chat/$agentId", params: { agentId: "123" } });
+      ```
+    - Link components for declarative navigation:
+      ```typescript
+      import { Link } from "@tanstack/react-router";
+      <Link to="/" search={{}} params={{}}>Home</Link>
+      <Link to="/chat/$agentId" params={{ agentId: "123" }}>Chat</Link>
+      ```
+  - **Route Parameters**:
+    - Access via the `useParams` hook:
+      ```typescript
+      import { useParams } from "@tanstack/react-router";
+      const { agentId } = useParams({ from: "/chat/$agentId" });
+      ```
+  - **Common Pitfalls**:
+    - **DO NOT** use React Router hooks (`useNavigate`, `useLocation` from `react-router`)
+    - **DO NOT** use React Router components (`BrowserRouter`, `Routes`, `Route` from `react-router-dom`)
+    - If navigation doesn't work, verify you're using TanStack Router imports, not React Router imports
+    - Avoid nesting of multiple Router providers (e.g., only one `ClerkProvider` should exist)
+    - Some components (like buttons) can't be nested inside other button components
+  - **Integration with Clerk Auth**:
+    - Clerk authentication is provided once at the root route level
+    - Auth state is accessible in all route components
+    - Protected routes should check auth status within the component
 
 ## Installing Plugins
 1. **Using Plugin Registry**:

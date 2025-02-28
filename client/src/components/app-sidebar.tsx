@@ -14,7 +14,7 @@ import {
     SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { apiClient } from "@/lib/api";
-import { NavLink, useLocation, useNavigate } from "react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { UUID } from "@elizaos/core";
 import { Book, Cog, Plus, Settings, User } from "lucide-react";
 import ConnectionStatus from "./connection-status";
@@ -22,9 +22,10 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { Button } from "./ui/button";
 
 export function AppSidebar() {
-    const location = useLocation();
+    const routerState = useRouterState();
+    const currentPath = routerState.location.pathname;
     const navigate = useNavigate();
-    const { isLoaded, isSignedIn } = useAuth();
+    const { isLoaded, isSignedIn, signOut } = useAuth();
     const { user } = useUser();
     
     const query = useQuery({
@@ -36,11 +37,12 @@ export function AppSidebar() {
     const agents = query?.data?.agents;
 
     const handleCreateCharacter = () => {
-        if (isSignedIn) {
-            navigate("/create-character");
-        } else {
-            navigate("/sign-in");
-        }
+        navigate({ to: "/create-character" });
+    };
+
+    const handleSignOut = async () => {
+        await signOut();
+        navigate({ to: "/" });
     };
 
     return (
@@ -50,7 +52,11 @@ export function AppSidebar() {
                     <div className="flex items-center justify-between w-full px-2">
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg" asChild>
-                                <NavLink to="/">
+                                <Link 
+                                    to="/" 
+                                    search={{}}
+                                    params={{}}
+                                >
                                     <img
                                         alt="elizaos-icon"
                                         src="/elizaos-icon.png"
@@ -65,7 +71,7 @@ export function AppSidebar() {
                                         </span>
                                         <span className="">v{info?.version}</span>
                                     </div>
-                                </NavLink>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <Button 
@@ -101,12 +107,12 @@ export function AppSidebar() {
                                         (agent: { id: UUID; name: string }) => (
                                             <SidebarMenuItem key={agent.id}>
                                                 <div className="flex w-full">
-                                                    <NavLink
-                                                        to={`/chat/${agent.id}`}
-                                                        className="flex-1"
+                                                    <Link 
+                                                        to="/chat/$agentId" 
+                                                        params={{ agentId: agent.id }}
                                                     >
                                                         <SidebarMenuButton
-                                                            isActive={location.pathname.includes(
+                                                            isActive={currentPath.includes(
                                                                 agent.id
                                                             )}
                                                         >
@@ -115,12 +121,11 @@ export function AppSidebar() {
                                                                 {agent.name}
                                                             </span>
                                                         </SidebarMenuButton>
-                                                    </NavLink>
-                                                    <NavLink to={`/settings/${agent.id}`}>
-                                                        <Button variant="ghost" size="icon" className="ml-2">
-                                                            <Settings className="size-4" />
-                                                        </Button>
-                                                    </NavLink>
+                                                    </Link>
+                                                    {/* Comment out settings for now since we don't have a route for it */}
+                                                    <Button variant="ghost" size="icon" className="ml-2">
+                                                        <Settings className="size-4" />
+                                                    </Button>
                                                 </div>
                                             </SidebarMenuItem>
                                         )
@@ -134,29 +139,32 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <NavLink
-                            to="https://elizaos.github.io/eliza/docs/intro/"
-                            target="_blank"
+                        <a 
+                            href="https://elizaos.github.io/eliza/docs/intro/"
+                            target="_blank" 
+                            rel="noopener noreferrer"
                         >
                             <SidebarMenuButton>
                                 <Book /> Documentation
                             </SidebarMenuButton>
-                        </NavLink>
+                        </a>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         {isLoaded ? (
                             isSignedIn ? (
-                                <NavLink to="/profile">
-                                    <SidebarMenuButton>
-                                        <User /> Profile
-                                    </SidebarMenuButton>
-                                </NavLink>
+                                <SidebarMenuButton onClick={handleSignOut}>
+                                    <User /> Sign Out
+                                </SidebarMenuButton>
                             ) : (
-                                <NavLink to="/sign-in">
+                                <Link 
+                                    to="/sign-in" 
+                                    search={{}}
+                                    params={{}}
+                                >
                                     <SidebarMenuButton>
                                         <User /> Sign In
                                     </SidebarMenuButton>
-                                </NavLink>
+                                </Link>
                             )
                         ) : (
                             <SidebarMenuButton disabled>

@@ -12,6 +12,24 @@ mkdir -p $LOG_DIR
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG_FILE="$LOG_DIR/elizaos_startup_$TIMESTAMP.log"
 
+# Function to get the current ngrok URL
+get_ngrok_url() {
+  local TUNNELS_JSON=$(curl -s http://127.0.0.1:4040/api/tunnels)
+  local NGROK_URL=$(echo "$TUNNELS_JSON" | grep -o '"public_url":"https://[^"]*"' | sed 's/"public_url":"//g' | sed 's/"//g' | head -n 1)
+  echo "$NGROK_URL"
+}
+
+# Function to check if ngrok is running
+check_ngrok_running() {
+  if pgrep -x "ngrok" > /dev/null; then
+    local NGROK_URL=$(get_ngrok_url)
+    if [ -n "$NGROK_URL" ]; then
+      return 0  # ngrok is running with a valid URL
+    fi
+  fi
+  return 1  # ngrok is not running or no valid URL
+}
+
 # Function to log and display messages
 log() {
   echo -e "$1" | tee -a "$LOG_FILE"
@@ -54,6 +72,34 @@ log "${GREEN}==========================================${NC}"
 log "${GREEN}   Starting ElizaOS Application Suite     ${NC}"
 log "${GREEN}==========================================${NC}"
 
+# Check if port 4000 is already in use
+log "\n${BLUE}Checking if port 4000 is already in use...${NC}"
+if lsof -i :4000 > /dev/null 2>&1; then
+  log "${YELLOW}Port 4000 is already in use. Attempting to free it...${NC}"
+  
+  # Get the PID of the process using port 4000
+  PORT_PID=$(lsof -t -i :4000)
+  if [ -n "$PORT_PID" ]; then
+    log "${YELLOW}Killing process $PORT_PID that is using port 4000...${NC}"
+    kill -9 $PORT_PID
+    sleep 2
+    
+    # Check if port is now free
+    if lsof -i :4000 > /dev/null 2>&1; then
+      log "${RED}Failed to free port 4000. Please free it manually and restart.${NC}"
+      exit 1
+    else
+      log "${GREEN}Successfully freed port 4000.${NC}"
+    fi
+  else
+    log "${RED}Could not identify the process using port 4000.${NC}"
+    log "${RED}Please free port 4000 manually and restart.${NC}"
+    exit 1
+  fi
+else
+  log "${GREEN}Port 4000 is available.${NC}"
+fi
+
 # 1. Start the User Management API server in the background
 log "\n${BLUE}Starting User Management API server...${NC}"
 cd packages/user-management-api
@@ -78,40 +124,62 @@ else
   log "${GREEN}Health check response: $HEALTH_RESULT${NC}"
 fi
 
-# 2. Start ngrok AFTER the server is confirmed running
-log "\n${BLUE}Starting ngrok tunnel to port 4000...${NC}"
+# 2. Check and potentially start ngrok AFTER the server is confirmed running
+log "\n${BLUE}Checking for ngrok tunnel to port 4000...${NC}"
 # Check if ngrok is already running
-if pgrep -x "ngrok" > /dev/null; then
-  log "${YELLOW}ngrok is already running. Using existing tunnel.${NC}"
+if check_ngrok_running; then
+  log "${YELLOW}ngrok is already running.${NC}"
+  NGROK_URL=$(get_ngrok_url)
+  log "${GREEN}Using existing ngrok URL: ${NGROK_URL}${NC}"
 else
-  ngrok http 4000 2>&1 | tee -a "$LOG_FILE" &
+  log "${YELLOW}No ngrok tunnel detected. Starting ngrok with reserved domain...${NC}"
+  
+  # Replace YOUR_RESERVED_DOMAIN with your actual domain from ngrok account
+  RESERVED_DOMAIN="nice-partly-lizard.ngrok-free.app"
+  
+  log "${BLUE}Starting ngrok with domain: ${RESERVED_DOMAIN}${NC}"
+  ngrok http 4000 --domain=${RESERVED_DOMAIN} 2>&1 | tee -a "$LOG_FILE" &
   NGROK_PID=$!
   PIDS+=($NGROK_PID)
-  # Wait a moment for ngrok to start
+  
+  # Wait for ngrok to start up
+  log "${YELLOW}Waiting for ngrok to start...${NC}"
   sleep 5
+  
+  # Get the new URL
+  NGROK_URL=$(get_ngrok_url)
+  if [ -z "$NGROK_URL" ]; then
+    log "${RED}Failed to start ngrok properly. Please check your configuration.${NC}"
+    log "${YELLOW}You may need to reserve a domain in your ngrok account first.${NC}"
+    log "${YELLOW}Exiting...${NC}"
+    exit 1
+  fi
+  
+  log "${GREEN}Successfully started ngrok with URL: ${NGROK_URL}${NC}"
 fi
 
-# Display ngrok URL - Updated to handle both domain formats
+# Display ngrok URL information
 log "${BLUE}Ngrok tunnel information:${NC}"
-TUNNELS_JSON=$(curl -s http://127.0.0.1:4040/api/tunnels)
-# Try to extract URL directly from JSON instead of using grep
-NGROK_URL=$(echo "$TUNNELS_JSON" | grep -o '"public_url":"https://[^"]*"' | sed 's/"public_url":"//g' | sed 's/"//g' | head -n 1)
+NGROK_URL=$(get_ngrok_url)
 
 if [ -z "$NGROK_URL" ]; then
   log "${RED}Could not get ngrok URL. Make sure ngrok is running correctly.${NC}"
-  log "${YELLOW}Detailed ngrok status:${NC}"
-  echo "$TUNNELS_JSON" | tee -a "$LOG_FILE"
 else
   log "${GREEN}Ngrok URL: ${NGROK_URL}${NC}"
 fi
 
 # Verify the tunnel is working
 log "${YELLOW}Testing ngrok connection...${NC}"
-HEALTH_CHECK=$(curl -s "$NGROK_URL/health" 2>&1 || echo "failed")
+HEALTH_CHECK=$(curl -s "${NGROK_URL}/health" 2>&1 || echo "failed")
 if [[ $HEALTH_CHECK == *"ok"* ]]; then
   log "${GREEN}Ngrok tunnel verified and working!${NC}"
+  log "${GREEN}Webhook URL for your Clerk configuration:${NC}"
+  log "${YELLOW}${NGROK_URL}/api/webhooks/clerk${NC}"
+  # Save the URL to a file for reference
+  echo "${NGROK_URL}/api/webhooks/clerk" > "logs/current_webhook_url.txt"
+  log "${GREEN}URL also saved to logs/current_webhook_url.txt${NC}"
 else
-  log "${RED}Could not verify ngrok tunnel. You may need to restart the script.${NC}"
+  log "${RED}Could not verify ngrok tunnel. Please check your setup.${NC}"
   log "${YELLOW}Response: $HEALTH_CHECK${NC}"
 fi
 
