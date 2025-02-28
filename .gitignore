@@ -108,4 +108,6 @@ packages/plugin-image-generation/
 packages/plugin-twitter/
 packages/plugin-web-search/
 
-@characters
+@characters# Ensure sensitive files are properly ignored
+characters/**/*.json
+.notes/

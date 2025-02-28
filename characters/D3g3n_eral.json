@@ -24,7 +24,7 @@
         },
         "ragKnowledge": false,
         "voice": {
-            "model": "en_US-male-medium"
+            "model": "en_US-female-medium"
         },
         "imageSettings": {
             "modelProvider": "heurist",
