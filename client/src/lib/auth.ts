@@ -1,7 +1,7 @@
 /**
  * Authentication utilities for integrating Clerk with Supabase
  */
-import { createServerClient } from '@supabase/ssr';
+import { createBrowserClient } from '@supabase/ssr';
 import { useAuth } from '@clerk/clerk-react';
 /**
  * Configuration options for Clerk authentication
@@ -34,30 +34,21 @@ export async function createSupabaseClient() {
       throw new Error('Missing Supabase credentials');
     }
     
+    // Create a Supabase client
+    const client = createBrowserClient(supabaseUrl, supabaseAnonKey);
+    
     // Get the token if available
     const token = await getUserToken();
     
-    // Create a Supabase client
-    return createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        global: {
-          headers: token 
-            ? { Authorization: `Bearer ${token}` }
-            : undefined
-        },
-        cookies: {
-          getAll() {
-            return [];
-          },
-          setAll() {
-            // Client-side cookies are handled by the browser
-            return;
-          }
-        }
-      }
-    );
+    if (token) {
+      // Set the auth session with the token
+      await client.auth.setSession({
+        access_token: token,
+        refresh_token: ''
+      });
+    }
+    
+    return client;
   } catch (error) {
     console.error('Error creating Supabase client:', error);
     throw new Error(`Failed to create Supabase client: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -93,8 +84,6 @@ let _isSignedIn: boolean | null = null;
 
 /**
  * Sets up token retrieval for non-component contexts
- * This function should be called from a component with access to Clerk's auth context
- * and it now receives the auth parameters directly
  */
 export function setupTokenRetrieval(
   getToken: ((opts?: {template?: string}) => Promise<string | null>),
@@ -107,29 +96,23 @@ export function setupTokenRetrieval(
     }
     
     _getTokenFn = getToken;
-    _isSignedIn = isSignedIn === undefined ? false : isSignedIn;
+    _isSignedIn = isSignedIn;
     return true;
   } catch (error) {
-    console.warn('Failed to set up token retrieval - invalid parameters', error);
+    console.warn('Failed to set up token retrieval:', error);
     return false;
   }
 }
 
 /**
  * Get the user's JWT token for Supabase
- * Will work in component contexts and in contexts where setupTokenRetrieval has been called
  */
 export async function getUserToken(): Promise<string | null> {
   try {
     if (_getTokenFn && _isSignedIn) {
-      try {
-        return await _getTokenFn({ template: 'supabase' });
-      } catch (error) {
-        console.error('Error getting user token from stored function:', error);
-        return null;
-      }
+      const token = await _getTokenFn({ template: 'supabase' });
+      return token;
     }
-    
     return null;
   } catch (error) {
     console.error('Error getting user token:', error);

@@ -1,5 +1,6 @@
 import { useAuth } from '@clerk/clerk-react';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 
 export function useSupabase() {
@@ -21,20 +22,15 @@ export function useSupabase() {
           throw new Error('Missing Supabase credentials');
         }
         
-        let headers = {};
+        const client = createBrowserClient(supabaseUrl, supabaseAnonKey);
         
         if (isSignedIn) {
           const token = await getToken({ template: 'supabase' });
           if (token) {
-            headers = {
-              Authorization: `Bearer ${token}`
-            };
+            // Update the client's headers with the auth token
+            client.auth.setSession({ access_token: token, refresh_token: '' });
           }
         }
-        
-        const client = createClient(supabaseUrl, supabaseAnonKey, {
-          global: { headers }
-        });
         
         setSupabase(client);
       } catch (error) {
