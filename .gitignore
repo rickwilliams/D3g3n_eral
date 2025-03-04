@@ -5,6 +5,10 @@ node_modules
 .env.production
 .env.local
 .env_main
+client/.env
+packages/user-management-api/.env
+*/**/.env
+**/.env
 concatenated-output.ts
 embedding-cache.json
 packages/plugin-buttplug/intiface-engine
@@ -111,3 +115,6 @@ packages/plugin-web-search/
 @characters# Ensure sensitive files are properly ignored
 characters/**/*.json
 .notes/
+
+# Ignore entire characters folder
+/characters/
