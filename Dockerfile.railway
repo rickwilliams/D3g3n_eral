@@ -17,7 +17,7 @@ COPY packages/user-management-api/package.json ./packages/user-management-api/
 COPY client/package.json ./client/
 
 # Install dependencies with frozen lockfile and production flag
-RUN pnpm install --frozen-lockfile --prod-only --ignore-scripts
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy only the source files we need to build
 COPY packages/core/src ./packages/core/src
