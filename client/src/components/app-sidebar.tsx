@@ -18,7 +18,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { UUID } from "@elizaos/core";
 import { Book, Cog, Plus, Settings, User } from "lucide-react";
 import ConnectionStatus from "./connection-status";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-react";
 import { Button } from "./ui/button";
 
 export function AppSidebar() {
@@ -26,7 +26,6 @@ export function AppSidebar() {
     const currentPath = routerState.location.pathname;
     const navigate = useNavigate();
     const { isLoaded, isSignedIn, signOut } = useAuth();
-    const { user } = useUser();
     
     const query = useQuery({
         queryKey: ["agents"],

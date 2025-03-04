@@ -1,72 +1,149 @@
-import pino, { type LogFn } from "pino";
-import pretty from "pino-pretty";
+/**
+ * Logger Utility
+ * 
+ * This module provides a centralized logging system for the application.
+ * It supports different log levels and can be configured to output logs
+ * to different destinations (console, file, etc.).
+ */
 
-import { parseBooleanFromText } from "./parsing.ts";
+/**
+ * Log levels in order of severity
+ */
+export enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  NONE = 4
+}
 
+/**
+ * Logger configuration options
+ */
+export interface LoggerOptions {
+  /** Minimum log level to display (default: INFO in production, DEBUG in development) */
+  minLevel?: LogLevel;
+  /** Whether to include timestamps in logs (default: true) */
+  timestamps?: boolean;
+  /** Whether to include log level in logs (default: true) */
+  showLevel?: boolean;
+}
 
-const customLevels: Record<string, number> = {
-    fatal: 60,
-    error: 50,
-    warn: 40,
-    info: 30,
-    log: 29,
-    progress: 28,
-    success: 27,
-    debug: 20,
-    trace: 10,
-};
+/**
+ * Logger class for centralized logging
+ */
+class Logger {
+  private minLevel: LogLevel;
+  private timestamps: boolean;
+  private showLevel: boolean;
 
-const raw = parseBooleanFromText(process?.env?.LOG_JSON_FORMAT) || false;
+  /**
+   * Create a new Logger instance
+   * @param options Logger configuration options
+   */
+  constructor(options: LoggerOptions = {}) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    this.minLevel = options.minLevel ?? (isProduction ? LogLevel.INFO : LogLevel.DEBUG);
+    this.timestamps = options.timestamps ?? true;
+    this.showLevel = options.showLevel ?? true;
+  }
 
-const createStream = () => {
-    if (raw) {
-        return undefined;
+  /**
+   * Format a log message
+   * @param level Log level
+   * @param message Log message
+   * @returns Formatted log message
+   */
+  private formatMessage(level: LogLevel, message: string): string {
+    const parts: string[] = [];
+    
+    if (this.timestamps) {
+      parts.push(`[${new Date().toISOString()}]`);
     }
-    return pretty({
-        colorize: true,
-        translateTime: "yyyy-mm-dd HH:MM:ss",
-        ignore: "pid,hostname",
-    });
-};
+    
+    if (this.showLevel) {
+      parts.push(`[${LogLevel[level]}]`);
+    }
+    
+    parts.push(message);
+    
+    return parts.join(' ');
+  }
 
-const defaultLevel = process?.env?.DEFAULT_LOG_LEVEL || "info";
+  /**
+   * Log a message at the specified level
+   * @param level Log level
+   * @param message Log message
+   * @param args Additional arguments to log
+   */
+  private log(level: LogLevel, message: string, ...args: any[]): void {
+    if (level < this.minLevel) {
+      return;
+    }
+    
+    const formattedMessage = this.formatMessage(level, message);
+    
+    switch (level) {
+      case LogLevel.DEBUG:
+        console.debug(formattedMessage, ...args);
+        break;
+      case LogLevel.INFO:
+        console.info(formattedMessage, ...args);
+        break;
+      case LogLevel.WARN:
+        console.warn(formattedMessage, ...args);
+        break;
+      case LogLevel.ERROR:
+        console.error(formattedMessage, ...args);
+        break;
+    }
+  }
 
-const options = {
-    level: defaultLevel,
-    customLevels,
-    hooks: {
-        logMethod(
-            inputArgs: [string | Record<string, unknown>, ...unknown[]],
-            method: LogFn
-        ): void {
-            const [arg1, ...rest] = inputArgs;
+  /**
+   * Log a debug message
+   * @param message Log message
+   * @param args Additional arguments to log
+   */
+  debug(message: string, ...args: any[]): void {
+    this.log(LogLevel.DEBUG, message, ...args);
+  }
 
-            if (typeof arg1 === "object") {
-                const messageParts = rest.map((arg) =>
-                    typeof arg === "string" ? arg : JSON.stringify(arg)
-                );
-                const message = messageParts.join(" ");
-                method.apply(this, [arg1, message]);
-            } else {
-                const context = {};
-                const messageParts = [arg1, ...rest].map((arg) =>
-                    typeof arg === "string" ? arg : arg
-                );
-                const message = messageParts
-                    .filter((part) => typeof part === "string")
-                    .join(" ");
-                const jsonParts = messageParts.filter(
-                    (part) => typeof part === "object"
-                );
+  /**
+   * Log an info message
+   * @param message Log message
+   * @param args Additional arguments to log
+   */
+  info(message: string, ...args: any[]): void {
+    this.log(LogLevel.INFO, message, ...args);
+  }
 
-                Object.assign(context, ...jsonParts);
+  /**
+   * Log a warning message
+   * @param message Log message
+   * @param args Additional arguments to log
+   */
+  warn(message: string, ...args: any[]): void {
+    this.log(LogLevel.WARN, message, ...args);
+  }
 
-                method.apply(this, [context, message]);
-            }
-        },
-    },
-};
+  /**
+   * Log an error message
+   * @param message Log message
+   * @param args Additional arguments to log
+   */
+  error(message: string, ...args: any[]): void {
+    this.log(LogLevel.ERROR, message, ...args);
+  }
 
-export const elizaLogger = pino(options, createStream());
+  /**
+   * Set the minimum log level
+   * @param level Minimum log level
+   */
+  setMinLevel(level: LogLevel): void {
+    this.minLevel = level;
+  }
+}
 
-export default elizaLogger;
+// Export a singleton instance
+export const logger = new Logger();

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClerkWebhookHandler } from './webhooks/clerk.js';
+import characterRoutes from './routes/characters.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,9 @@ app.use(cors({
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'user-management-api' });
 });
+
+// Register routes
+app.use('/api/characters', characterRoutes);
 
 // Clerk webhook handler
 app.post('/api/webhooks/clerk', createClerkWebhookHandler());

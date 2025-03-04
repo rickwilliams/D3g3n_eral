@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { createSupabaseClient, setupTokenRetrieval } from "@/lib/auth";
@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import React from "react";
 import { uploadToS3, convertBlobToS3Url } from "@/lib/s3";
 
 // UI Components
