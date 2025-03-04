@@ -1,0 +1,61 @@
+# Optimized Dockerfile for Railway deployment
+FROM node:20-slim AS builder
+
+# Install pnpm globally and necessary build tools
+RUN npm install -g pnpm@9.15.4 && \
+    apt-get update && \
+    apt-get install -y \
+    git \
+    python3 \
+    curl \
+    build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY client/package.json ./client/
+COPY packages/core/package.json ./packages/core/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy application code
+COPY . .
+
+# Build the project
+RUN pnpm run build && pnpm prune --prod
+
+# Final runtime image
+FROM node:20-slim
+
+# Install runtime dependencies
+RUN npm install -g pnpm@9.15.4 && \
+    apt-get update && \
+    apt-get install -y \
+    python3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy built artifacts and production dependencies from the builder stage
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/client ./client
+COPY --from=builder /app/packages ./packages
+
+# Set environment variables
+ENV PORT=3000
+ENV NODE_ENV=production
+
+# Expose the port
+EXPOSE 3000
+
+# Command to start the application
+CMD ["pnpm", "start:client"] 

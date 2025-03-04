@@ -176,6 +176,21 @@ Click [here](https://fleek.xyz/eliza/) to get started!
 
 ---
 
+### Deploy Eliza on Railway
+
+For a production-ready deployment with automatic scaling and CI/CD integration, you can deploy ElizaOS on [Railway](https://railway.app/).
+
+Railway provides:
+- Automatic deployments from GitHub
+- Environment variable management
+- Built-in PostgreSQL database support
+- Automatic scaling
+- Custom domains with SSL
+
+For detailed deployment instructions, see our [Railway Deployment Guide](./RAILWAY_DEPLOYMENT.md).
+
+---
+
 ### Community & contact
 
 - [GitHub Issues](https://github.com/elizaos/eliza/issues). Best for: bugs you encounter using Eliza, and feature proposals.
