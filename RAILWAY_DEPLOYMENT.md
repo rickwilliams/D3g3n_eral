@@ -36,6 +36,43 @@ VITE_AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
 VITE_AWS_BUCKET_NAME=your_s3_bucket_name
 ```
 
+## Automated Deployment
+
+We've created a comprehensive deployment script that handles the entire deployment process:
+
+```bash
+# Deploy to Railway using the automated script
+./scripts/deploy-railway.sh
+```
+
+This script:
+
+1. Checks if Railway CLI is installed and you're logged in
+2. Runs local tests to ensure everything is working
+3. Verifies environment variables in `.env.railway`
+4. Sets up Railway environment variables
+5. Builds the application for production
+6. Deploys to Railway
+7. Tests the deployment using the test script
+8. Provides next steps and troubleshooting guidance
+
+## Testing the Deployment
+
+After deployment, you can manually test the deployment:
+
+```bash
+# Test the deployment
+./scripts/test-railway-deployment.sh https://your-app-name.railway.app
+```
+
+This script tests:
+1. Health endpoints
+2. API endpoints
+3. Authentication requirements
+4. Webhook endpoint configuration
+
+For more detailed testing information, refer to the `test_documentation.md` file.
+
 ## Deployment Steps
 
 1. **Fork or Clone the Repository**
@@ -118,19 +155,30 @@ CREATE POLICY "Users can delete their own agents" ON public.agents
 
 If you encounter issues during deployment:
 
-1. **Check Logs**
-   - In your Railway project, go to the "Deployments" tab
-   - Click on the latest deployment to view logs
+1. Check Railway logs:
+   ```bash
+   railway logs
+   ```
 
-2. **Verify Environment Variables**
-   - Ensure all required environment variables are set correctly
+2. Verify environment variables in Railway:
+   ```bash
+   railway variables
+   ```
 
-3. **Check Supabase Connection**
-   - Verify that your application can connect to Supabase
-   - Check that the JWT template in Clerk is configured correctly
+3. Check for build errors:
+   ```bash
+   railway status
+   ```
 
-4. **Memory Issues**
-   - If you encounter memory issues, consider upgrading your Railway plan or optimizing the application
+4. Run the local tests to ensure everything is working locally:
+   ```bash
+   ./scripts/run-local-tests.sh
+   ```
+
+5. Verify environment variables:
+   ```bash
+   ./scripts/verify-env.sh --env-file .env.railway
+   ```
 
 ## Local Development
 
