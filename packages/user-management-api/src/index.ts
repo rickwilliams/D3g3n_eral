@@ -22,6 +22,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'user-management-api' });
 });
 
+// Add health check endpoint for Railway deployment
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Register routes
 app.use('/api/characters', characterRoutes);
 

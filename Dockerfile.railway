@@ -1,5 +1,5 @@
-# Optimized Dockerfile for Railway Deployment
-# Multi-stage build to reduce image size and build time
+# Ultra-optimized Dockerfile for Railway Deployment
+# Multi-stage build with aggressive pruning
 
 # Build stage
 FROM node:20-alpine AS builder
@@ -7,20 +7,31 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm@latest turbo
+# Install pnpm globally with minimal dependencies
+RUN npm install -g pnpm@latest --no-fund --no-audit
 
-# Copy package files
+# Copy only essential package files first
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
-COPY packages/*/package.json ./packages/
+COPY packages/core/package.json ./packages/core/
+COPY packages/user-management-api/package.json ./packages/user-management-api/
+COPY client/package.json ./client/
 
-# Install dependencies with frozen lockfile (faster)
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install dependencies with frozen lockfile and production flag
+RUN pnpm install --frozen-lockfile --prod-only --ignore-scripts
 
-# Copy source files
-COPY . .
+# Copy only the source files we need to build
+COPY packages/core/src ./packages/core/src
+COPY packages/core/tsconfig.json ./packages/core/
+COPY packages/user-management-api/src ./packages/user-management-api/src
+COPY packages/user-management-api/tsconfig.json ./packages/user-management-api/
+COPY client/src ./client/src
+COPY client/public ./client/public
+COPY client/index.html ./client/
+COPY client/tsconfig.json ./client/
+COPY client/vite.config.ts ./client/
+COPY turbo.json ./
 
-# Build only the necessary packages (adjust as needed)
+# Build only the necessary packages
 RUN pnpm run build:railway
 
 # Production stage
@@ -34,10 +45,12 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Copy package files
-COPY --from=builder /app/package.json /app/pnpm-workspace.yaml /app/pnpm-lock.yaml /app/turbo.json ./
+COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
 
-# Copy built packages and dependencies
+# Copy only production dependencies
 COPY --from=builder /app/node_modules ./node_modules
+
+# Copy only built packages
 COPY --from=builder /app/packages/core/dist ./packages/core/dist
 COPY --from=builder /app/packages/core/package.json ./packages/core/
 COPY --from=builder /app/packages/user-management-api/dist ./packages/user-management-api/dist
@@ -45,13 +58,15 @@ COPY --from=builder /app/packages/user-management-api/package.json ./packages/us
 COPY --from=builder /app/client/dist ./client/dist
 COPY --from=builder /app/client/package.json ./client/
 
-# Copy necessary files for runtime
-COPY --from=builder /app/characters ./characters
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/scripts ./scripts
+# Copy minimal runtime files
+COPY scripts/start.sh ./scripts/
+COPY scripts/health-check.sh ./scripts/
+
+# Make scripts executable
+RUN chmod +x ./scripts/*.sh
 
 # Expose port
 EXPOSE 3000
 
 # Start the application
-CMD ["pnpm", "start"] 
+CMD ["node", "packages/user-management-api/dist/index.js"] 
