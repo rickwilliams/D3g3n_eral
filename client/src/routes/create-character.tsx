@@ -1,4 +1,4 @@
-import { CreateCharacterForm } from "@/components/create-character-modal";
+import { CreateCharacterForm } from "@/components/create-character";
 import { useNavigate } from "@tanstack/react-router";
 import PageTitle from "@/components/page-title";
 

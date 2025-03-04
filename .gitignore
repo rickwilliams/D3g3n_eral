@@ -118,3 +118,6 @@ characters/**/*.json
 
 # Ignore entire characters folder
 /characters/
+
+# Ignore .notes directory
+/.notes/

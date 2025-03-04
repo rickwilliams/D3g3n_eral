@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Cog, Plus, Bot } from "lucide-react";
+import { Cog, Plus, Bot, MessageSquare } from "lucide-react";
 import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,30 +115,28 @@ export default function Home() {
             {!loading && (characters.length > 0 || agents?.length > 0) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {characters.map(character => (
-                        <Card key={character.id} className="flex flex-col h-[200px]">
-                            <CardHeader>
+                        <Card 
+                            key={character.id} 
+                            className="flex flex-col h-[200px] relative overflow-hidden group"
+                            style={{
+                                backgroundImage: character.avatarUrl ? `url(${character.avatarUrl})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center'
+                            }}
+                        >
+                            {/* Add a semi-transparent overlay to improve text readability */}
+                            <div className="absolute inset-0 bg-background/70 backdrop-blur-sm transition-all duration-300 group-hover:bg-background/40 group-hover:backdrop-blur-[2px]"></div>
+                            <CardHeader className="relative z-10 transition-opacity duration-300 group-hover:opacity-0">
                                 <CardTitle className="flex items-center gap-2">
                                     {character.name}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="flex-1">
+                            <CardContent className="flex-1 relative z-10 transition-opacity duration-300 group-hover:opacity-0">
                                 <p className="text-sm text-muted-foreground">
                                     {character.details?.bio?.[0] || "No description provided."}
                                 </p>
                             </CardContent>
-                            <CardFooter className="flex justify-between">
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => {
-                                        // TODO: Implement character editing
-                                        alert("Edit functionality coming soon!");
-                                    }}
-                                >
-                                    <Cog className="h-4 w-4 mr-2" />
-                                    Settings
-                                </Button>
-                                
+                            <CardFooter className="flex justify-between relative z-10">
                                 <Button
                                     size="sm"
                                     variant="default"
@@ -146,8 +144,26 @@ export default function Home() {
                                         // TODO: Implement chat functionality
                                         alert("Chat functionality coming soon!");
                                     }}
+                                    className="mr-auto"
                                 >
+                                    <MessageSquare className="h-4 w-4 mr-2" />
                                     Chat
+                                </Button>
+                                
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                        // Navigate to edit character page
+                                        navigate({ 
+                                            to: "/edit-character/$characterId", 
+                                            params: { characterId: character.id } 
+                                        });
+                                    }}
+                                    className="ml-auto"
+                                    title="Settings"
+                                >
+                                    <Cog className="h-4 w-4" />
                                 </Button>
                             </CardFooter>
                         </Card>

@@ -7,6 +7,7 @@ import Home from "./home";
 import SignIn from "./sign-in";
 import SignUp from "./sign-up";
 import CreateCharacterPage from "./create-character";
+import EditCharacterPage from "./edit-character";
 import { Toaster } from "../components/ui/toaster";
 
 // Create a client
@@ -43,6 +44,12 @@ const createCharacterRoute = new Route({
   component: CreateCharacterPage,
 });
 
+const editCharacterRoute = new Route({
+  getParentRoute: () => layoutRoute,
+  path: "/edit-character/$characterId",
+  component: EditCharacterPage,
+});
+
 const chatRoute = new Route({
   getParentRoute: () => layoutRoute,
   path: "/chat/$agentId",
@@ -66,9 +73,10 @@ const routeTree = rootRoute.addChildren([
   layoutRoute.addChildren([
     indexRoute,
     chatRoute,
+    createCharacterRoute,
+    editCharacterRoute,
     signInRoute,
     signUpRoute,
-    createCharacterRoute,
   ]),
 ]);
 

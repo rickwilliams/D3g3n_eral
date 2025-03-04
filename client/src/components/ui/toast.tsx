@@ -80,22 +80,30 @@ export function Toast({
   className,
   variant,
   onClose,
+  onOpenChange,
   title,
   description,
   action,
   ...props
 }: ToastProps & {
-  onClose: () => void;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
   title?: string;
   description?: string;
   action?: React.ReactNode;
 }) {
+  // Create a safe version of onClose that doesn't error if not provided
+  const handleClose = () => {
+    if (onClose) onClose();
+    if (onOpenChange) onOpenChange(false);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      onClose();
+      handleClose();
     }, 5000);
     return () => clearTimeout(timer);
-  }, [onClose]);
+  }, [onClose, onOpenChange]);
 
   return (
     <div
@@ -108,7 +116,7 @@ export function Toast({
       </div>
       {action}
       <button
-        onClick={onClose}
+        onClick={handleClose}
         className="rounded-md p-1 text-foreground/50 opacity-70 transition-opacity hover:text-foreground hover:opacity-100 focus:opacity-100 focus:outline-none"
       >
         <X className="h-4 w-4" />
@@ -147,13 +155,14 @@ export function ToastAction({
 }
 
 // Add missing components that toaster.tsx is trying to import
-export function ToastClose({ className, ...props }: React.HTMLAttributes<HTMLButtonElement>) {
+export function ToastClose({ className, onClick, ...props }: React.HTMLAttributes<HTMLButtonElement> & { onClick?: () => void }) {
   return (
     <button
       className={cn(
         "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-70 transition-opacity hover:text-foreground hover:opacity-100 focus:opacity-100 focus:outline-none",
         className
       )}
+      onClick={onClick}
       {...props}
     >
       <X className="h-4 w-4" />

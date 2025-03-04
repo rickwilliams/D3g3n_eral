@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import React from "react";
+import { uploadToS3, convertBlobToS3Url } from "@/lib/s3";
 
 // UI Components
 import {
@@ -198,16 +199,55 @@ export function CreateCharacterForm({
       // Create unique ID for the character
       const characterId = uuidv4();
       
-      // Upload avatar if it's a file
+      // Upload avatar if provided
       let avatarUrl = values.avatarUrl || "";
-      if (avatarFile) {
-        // Here we would upload the file to S3 or similar storage
-        // For now we'll just use the local URL
-        // In a real implementation, we'd handle the upload and get a permanent URL
-        toast({
-          title: "Avatar upload",
-          description: "In a production environment, the avatar would be uploaded to cloud storage."
-        });
+      
+      // Check if avatarUrl is a blob URL and convert it to an S3 URL
+      if (avatarUrl && avatarUrl.startsWith('blob:')) {
+        try {
+          toast({
+            title: "Uploading avatar",
+            description: "Please wait while we upload your avatar image..."
+          });
+          
+          avatarUrl = await convertBlobToS3Url(avatarUrl);
+          
+          toast({
+            title: "Avatar uploaded",
+            description: "Your avatar has been successfully uploaded to S3."
+          });
+        } catch (uploadError) {
+          console.error('Error uploading avatar to S3:', uploadError);
+          toast({
+            title: "Avatar upload failed",
+            description: "We couldn't upload your avatar. Using default avatar instead.",
+            variant: "destructive"
+          });
+          avatarUrl = ""; // Reset to empty if upload failed
+        }
+      } else if (avatarFile) {
+        // If we have a file object but no URL, upload directly
+        try {
+          toast({
+            title: "Uploading avatar",
+            description: "Please wait while we upload your avatar image..."
+          });
+          
+          avatarUrl = await uploadToS3(avatarFile, 'avatars');
+          
+          toast({
+            title: "Avatar uploaded",
+            description: "Your avatar has been successfully uploaded to S3."
+          });
+        } catch (uploadError) {
+          console.error('Error uploading avatar file to S3:', uploadError);
+          toast({
+            title: "Avatar upload failed",
+            description: "We couldn't upload your avatar. Using default avatar instead.",
+            variant: "destructive"
+          });
+          avatarUrl = ""; // Reset to empty if upload failed
+        }
       }
 
       // Construct the character data in the right format
