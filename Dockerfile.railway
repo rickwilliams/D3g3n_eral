@@ -1,61 +1,57 @@
-# Optimized Dockerfile for Railway deployment
-FROM node:20-slim AS builder
+# Optimized Dockerfile for Railway Deployment
+# Multi-stage build to reduce image size and build time
 
-# Install pnpm globally and necessary build tools
-RUN npm install -g pnpm@9.15.4 && \
-    apt-get update && \
-    apt-get install -y \
-    git \
-    python3 \
-    curl \
-    build-essential && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Build stage
+FROM node:20-alpine AS builder
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy package files for dependency installation
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
-COPY client/package.json ./client/
-COPY packages/core/package.json ./packages/core/
+# Install pnpm globally
+RUN npm install -g pnpm@latest turbo
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY packages/*/package.json ./packages/
 
-# Copy application code
+# Install dependencies with frozen lockfile (faster)
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Copy source files
 COPY . .
 
-# Build the project
-RUN pnpm run build && pnpm prune --prod
+# Build only the necessary packages (adjust as needed)
+RUN pnpm run build:railway
 
-# Final runtime image
-FROM node:20-slim
+# Production stage
+FROM node:20-alpine AS runner
 
-# Install runtime dependencies
-RUN npm install -g pnpm@9.15.4 && \
-    apt-get update && \
-    apt-get install -y \
-    python3 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy built artifacts and production dependencies from the builder stage
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/client ./client
-COPY --from=builder /app/packages ./packages
-
 # Set environment variables
-ENV PORT=3000
 ENV NODE_ENV=production
+ENV PORT=3000
 
-# Expose the port
+# Copy package files
+COPY --from=builder /app/package.json /app/pnpm-workspace.yaml /app/pnpm-lock.yaml /app/turbo.json ./
+
+# Copy built packages and dependencies
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/core/dist ./packages/core/dist
+COPY --from=builder /app/packages/core/package.json ./packages/core/
+COPY --from=builder /app/packages/user-management-api/dist ./packages/user-management-api/dist
+COPY --from=builder /app/packages/user-management-api/package.json ./packages/user-management-api/
+COPY --from=builder /app/client/dist ./client/dist
+COPY --from=builder /app/client/package.json ./client/
+
+# Copy necessary files for runtime
+COPY --from=builder /app/characters ./characters
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/scripts ./scripts
+
+# Expose port
 EXPOSE 3000
 
-# Command to start the application
-CMD ["pnpm", "start:client"] 
+# Start the application
+CMD ["pnpm", "start"] 

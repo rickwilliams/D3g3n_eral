@@ -33,7 +33,8 @@
     "railway:build:optimized": "bash ./scripts/railway-build.sh",
     "deploy:railway": "pnpm railway:build && pnpm railway:deploy",
     "deploy:railway:script": "bash ./scripts/deploy-railway.sh",
-    "deploy:railway:optimized": "pnpm railway:build:optimized && pnpm railway:deploy"
+    "deploy:railway:optimized": "pnpm railway:build:optimized && pnpm railway:deploy",
+    "build:railway": "turbo run build --filter=@elizaos/core --filter=@elizaos/user-management-api --filter=client"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
