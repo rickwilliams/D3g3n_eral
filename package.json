@@ -23,7 +23,17 @@
     "docker": "pnpm docker:build && pnpm docker:run && pnpm docker:bash",
     "test": "bash ./scripts/test.sh",
     "smokeTests": "bash ./scripts/smokeTests.sh",
-    "integrationTests": "bash ./scripts/integrationTests.sh"
+    "integrationTests": "bash ./scripts/integrationTests.sh",
+    "railway:deploy": "railway up",
+    "railway:env": "railway env",
+    "railway:logs": "railway logs",
+    "railway:status": "railway status",
+    "railway:variables": "railway variables",
+    "railway:build": "NODE_ENV=production pnpm build-docker",
+    "railway:build:optimized": "bash ./scripts/railway-build.sh",
+    "deploy:railway": "pnpm railway:build && pnpm railway:deploy",
+    "deploy:railway:script": "bash ./scripts/deploy-railway.sh",
+    "deploy:railway:optimized": "pnpm railway:build:optimized && pnpm railway:deploy"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
