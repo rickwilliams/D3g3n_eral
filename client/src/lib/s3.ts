@@ -1,5 +1,4 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Get environment variables with fallbacks to prevent "missing" errors
 const region = import.meta.env.VITE_AWS_REGION;

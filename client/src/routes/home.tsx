@@ -82,13 +82,6 @@ export default function Home() {
         navigate({ to: "/create-character" });
     };
 
-    const handleChatClick = (agentId: UUID) => {
-        navigate({ 
-            to: "/chat/$agentId",
-            params: { agentId }
-        });
-    };
-
     return (
         <div className="flex flex-col gap-4 h-full p-4">
             <div className="flex justify-between items-center">

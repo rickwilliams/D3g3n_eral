@@ -26,7 +26,7 @@ export function AppSidebar() {
     const currentPath = routerState.location.pathname;
     const navigate = useNavigate();
     const { isLoaded, isSignedIn, signOut } = useAuth();
-    const { user } = useUser();
+    const { } = useUser();
     
     const query = useQuery({
         queryKey: ["agents"],

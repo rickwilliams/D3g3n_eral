@@ -45,6 +45,21 @@ importers:
       '@elizaos-plugins/adapter-sqlite':
         specifier: workspace:*
         version: link:packages/adapter-sqlite
+      '@elizaos-plugins/adapter-supabase':
+        specifier: github:elizaos-plugins/adapter-supabase
+        version: https://codeload.github.com/elizaos-plugins/adapter-supabase/tar.gz/88401098c08be636a169f06a868446788d8bae53(bufferutil@4.0.9)(utf-8-validate@5.0.10)(whatwg-url@7.1.0)
+      '@elizaos-plugins/client-twitter':
+        specifier: github:elizaos-plugins/client-twitter
+        version: https://codeload.github.com/elizaos-plugins/client-twitter/tar.gz/1dbcfa726d1e1f0efa6b95946b9e8b04d03167ef(bufferutil@4.0.9)(utf-8-validate@5.0.10)(whatwg-url@7.1.0)
+      '@elizaos-plugins/plugin-image-generation':
+        specifier: github:elizaos-plugins/plugin-image-generation
+        version: https://codeload.github.com/elizaos-plugins/plugin-image-generation/tar.gz/440c3462c05df31d1a370e2ed1649eeac4634102(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(whatwg-url@7.1.0)(yaml@2.7.0)
+      '@elizaos-plugins/plugin-web-search':
+        specifier: github:elizaos-plugins/plugin-web-search
+        version: https://codeload.github.com/elizaos-plugins/plugin-web-search/tar.gz/9f5824dbe573933aef69284240c0082849bb0679(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(whatwg-url@7.1.0)(yaml@2.7.0)
+      '@elizaos/client-auto':
+        specifier: github:elizaos-plugins/client-auto
+        version: https://codeload.github.com/elizaos-plugins/client-auto/tar.gz/c68cb47520771f5065beacdb8f01f13c5cfbb4c7(whatwg-url@7.1.0)
       '@injectivelabs/sdk-ts':
         specifier: ^1.14.33
         version: 1.14.41(@types/react@19.0.10)(bufferutil@4.0.9)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(utf-8-validate@5.0.10)
@@ -164,23 +179,20 @@ importers:
         specifier: ^3.758.0
         version: 3.758.0
       '@elizaos-plugins/adapter-supabase':
-        specifier: workspace:0.25.6-alpha.1
-        version: link:../packages/adapter-supabase
-      '@elizaos-plugins/client-auto':
-        specifier: workspace:0.25.6-alpha.1
-        version: link:../packages/client-auto
+        specifier: github:elizaos-plugins/adapter-supabase
+        version: https://codeload.github.com/elizaos-plugins/adapter-supabase/tar.gz/88401098c08be636a169f06a868446788d8bae53(bufferutil@4.0.9)(utf-8-validate@5.0.10)(whatwg-url@7.1.0)
       '@elizaos-plugins/client-twitter':
-        specifier: workspace:0.25.6-alpha.1
-        version: link:../packages/client-twitter
+        specifier: github:elizaos-plugins/client-twitter
+        version: https://codeload.github.com/elizaos-plugins/client-twitter/tar.gz/1dbcfa726d1e1f0efa6b95946b9e8b04d03167ef(bufferutil@4.0.9)(utf-8-validate@5.0.10)(whatwg-url@7.1.0)
       '@elizaos-plugins/plugin-image-generation':
-        specifier: workspace:^
-        version: link:../packages/plugin-image-generation
+        specifier: github:elizaos-plugins/plugin-image-generation
+        version: https://codeload.github.com/elizaos-plugins/plugin-image-generation/tar.gz/440c3462c05df31d1a370e2ed1649eeac4634102(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(whatwg-url@7.1.0)(yaml@2.7.0)
       '@elizaos-plugins/plugin-twitter':
-        specifier: workspace:^
-        version: link:../packages/plugin-twitter
+        specifier: github:elizaos-plugins/plugin-twitter
+        version: https://codeload.github.com/elizaos-plugins/plugin-twitter/tar.gz/6d544c24ad7f65b339511138cf09af185e2e496a(@swc/core@1.10.18(@swc/helpers@0.5.15))(bufferutil@4.0.9)(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(utf-8-validate@5.0.10)(yaml@2.7.0)
       '@elizaos-plugins/plugin-web-search':
-        specifier: workspace:^
-        version: link:../packages/plugin-web-search
+        specifier: github:elizaos-plugins/plugin-web-search
+        version: https://codeload.github.com/elizaos-plugins/plugin-web-search/tar.gz/9f5824dbe573933aef69284240c0082849bb0679(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(whatwg-url@7.1.0)(yaml@2.7.0)
       '@elizaos/client-direct':
         specifier: workspace:*
         version: link:../packages/client-direct
@@ -2840,6 +2852,40 @@ packages:
   '@docusaurus/utils@3.7.0':
     resolution: {integrity: sha512-e7zcB6TPnVzyUaHMJyLSArKa2AG3h9+4CfvKXKKWNx6hRs+p0a+u7HHTJBgo6KW2m+vqDnuIHK4X+bhmoghAFA==}
     engines: {node: '>=18.0'}
+
+  '@elizaos-plugins/adapter-supabase@https://codeload.github.com/elizaos-plugins/adapter-supabase/tar.gz/88401098c08be636a169f06a868446788d8bae53':
+    resolution: {tarball: https://codeload.github.com/elizaos-plugins/adapter-supabase/tar.gz/88401098c08be636a169f06a868446788d8bae53}
+    version: 0.25.6-alpha.1
+    peerDependencies:
+      whatwg-url: 7.1.0
+
+  '@elizaos-plugins/client-twitter@https://codeload.github.com/elizaos-plugins/client-twitter/tar.gz/1dbcfa726d1e1f0efa6b95946b9e8b04d03167ef':
+    resolution: {tarball: https://codeload.github.com/elizaos-plugins/client-twitter/tar.gz/1dbcfa726d1e1f0efa6b95946b9e8b04d03167ef}
+    version: 0.25.6-alpha.1
+    peerDependencies:
+      whatwg-url: 7.1.0
+
+  '@elizaos-plugins/plugin-image-generation@https://codeload.github.com/elizaos-plugins/plugin-image-generation/tar.gz/440c3462c05df31d1a370e2ed1649eeac4634102':
+    resolution: {tarball: https://codeload.github.com/elizaos-plugins/plugin-image-generation/tar.gz/440c3462c05df31d1a370e2ed1649eeac4634102}
+    version: 0.1.9
+    peerDependencies:
+      whatwg-url: 7.1.0
+
+  '@elizaos-plugins/plugin-twitter@https://codeload.github.com/elizaos-plugins/plugin-twitter/tar.gz/6d544c24ad7f65b339511138cf09af185e2e496a':
+    resolution: {tarball: https://codeload.github.com/elizaos-plugins/plugin-twitter/tar.gz/6d544c24ad7f65b339511138cf09af185e2e496a}
+    version: 0.1.9
+
+  '@elizaos-plugins/plugin-web-search@https://codeload.github.com/elizaos-plugins/plugin-web-search/tar.gz/9f5824dbe573933aef69284240c0082849bb0679':
+    resolution: {tarball: https://codeload.github.com/elizaos-plugins/plugin-web-search/tar.gz/9f5824dbe573933aef69284240c0082849bb0679}
+    version: 0.1.9
+    peerDependencies:
+      whatwg-url: 7.1.0
+
+  '@elizaos/client-auto@https://codeload.github.com/elizaos-plugins/client-auto/tar.gz/c68cb47520771f5065beacdb8f01f13c5cfbb4c7':
+    resolution: {tarball: https://codeload.github.com/elizaos-plugins/client-auto/tar.gz/c68cb47520771f5065beacdb8f01f13c5cfbb4c7}
+    version: 0.25.6-alpha.1
+    peerDependencies:
+      whatwg-url: 7.1.0
 
   '@emnapi/core@1.3.1':
     resolution: {integrity: sha512-pVGjBIt1Y6gg3EJN8jTcfpP/+uuRksIo055oE/OBkDNcjZqVbfkWCksG1Jp4yZnj3iKWyWX8fdG/j6UDYPbFog==}
@@ -17811,6 +17857,83 @@ snapshots:
       - supports-color
       - uglify-js
       - webpack-cli
+
+  '@elizaos-plugins/adapter-supabase@https://codeload.github.com/elizaos-plugins/adapter-supabase/tar.gz/88401098c08be636a169f06a868446788d8bae53(bufferutil@4.0.9)(utf-8-validate@5.0.10)(whatwg-url@7.1.0)':
+    dependencies:
+      '@supabase/supabase-js': 2.46.2(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      whatwg-url: 7.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@elizaos-plugins/client-twitter@https://codeload.github.com/elizaos-plugins/client-twitter/tar.gz/1dbcfa726d1e1f0efa6b95946b9e8b04d03167ef(bufferutil@4.0.9)(utf-8-validate@5.0.10)(whatwg-url@7.1.0)':
+    dependencies:
+      agent-twitter-client: 0.0.18(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      discord.js: 14.16.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      glob: 11.0.0
+      whatwg-url: 7.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@elizaos-plugins/plugin-image-generation@https://codeload.github.com/elizaos-plugins/plugin-image-generation/tar.gz/440c3462c05df31d1a370e2ed1649eeac4634102(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(whatwg-url@7.1.0)(yaml@2.7.0)':
+    dependencies:
+      tsup: 8.3.5(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.7.0)
+      whatwg-url: 7.1.0
+    transitivePeerDependencies:
+      - '@microsoft/api-extractor'
+      - '@swc/core'
+      - jiti
+      - postcss
+      - supports-color
+      - tsx
+      - typescript
+      - yaml
+
+  '@elizaos-plugins/plugin-twitter@https://codeload.github.com/elizaos-plugins/plugin-twitter/tar.gz/6d544c24ad7f65b339511138cf09af185e2e496a(@swc/core@1.10.18(@swc/helpers@0.5.15))(bufferutil@4.0.9)(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(utf-8-validate@5.0.10)(yaml@2.7.0)':
+    dependencies:
+      agent-twitter-client: 0.0.18(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      tsup: 8.3.5(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.7.0)
+    transitivePeerDependencies:
+      - '@microsoft/api-extractor'
+      - '@swc/core'
+      - bufferutil
+      - jiti
+      - postcss
+      - supports-color
+      - tsx
+      - typescript
+      - utf-8-validate
+      - yaml
+
+  '@elizaos-plugins/plugin-web-search@https://codeload.github.com/elizaos-plugins/plugin-web-search/tar.gz/9f5824dbe573933aef69284240c0082849bb0679(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(whatwg-url@7.1.0)(yaml@2.7.0)':
+    dependencies:
+      '@tavily/core': 0.0.2
+      js-tiktoken: 1.0.15
+      tsup: 8.3.5(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.7.0)
+      whatwg-url: 7.1.0
+    transitivePeerDependencies:
+      - '@microsoft/api-extractor'
+      - '@swc/core'
+      - debug
+      - jiti
+      - postcss
+      - supports-color
+      - tsx
+      - typescript
+      - yaml
+
+  '@elizaos/client-auto@https://codeload.github.com/elizaos-plugins/client-auto/tar.gz/c68cb47520771f5065beacdb8f01f13c5cfbb4c7(whatwg-url@7.1.0)':
+    dependencies:
+      '@types/body-parser': 1.19.5
+      '@types/cors': 2.8.17
+      '@types/express': 5.0.0
+      body-parser: 1.20.3
+      cors: 2.8.5
+      multer: 1.4.5-lts.1
+      whatwg-url: 7.1.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@emnapi/core@1.3.1':
     dependencies:

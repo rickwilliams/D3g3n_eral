@@ -6,14 +6,12 @@ import PageTitle from "@/components/page-title";
 import { EditCharacterForm } from "@/components/edit-character";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 export default function EditCharacterPage() {
   const params = useParams({ from: "/layout/edit-character/$characterId" });
   const characterId = params.characterId;
   const navigate = useNavigate();
   const { isSignedIn } = useAuth();
-  const { toast } = useToast();
   const [character, setCharacter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

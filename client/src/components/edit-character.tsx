@@ -1,13 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { createSupabaseClient, setupTokenRetrieval } from "@/lib/auth";
-import { v4 as uuidv4 } from 'uuid';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import React from "react";
-import { uploadToS3, convertBlobToS3Url } from "@/lib/s3";
+import { uploadToS3 } from "@/lib/s3";
 import { useToast } from "@/hooks/use-toast";
 
 // UI Components
@@ -314,79 +312,6 @@ export function EditCharacterForm({
     }
   };
   
-  // Function to discover which table contains the character and its ID field
-  const findCharacterTableAndField = async (
-    supabase: any,
-    characterId: string
-  ): Promise<{
-    tableFound: string | null;
-    idField: string | null;
-    data: any | null;
-  }> => {
-    console.log('Attempting to discover correct table and ID field for character:', characterId);
-    
-    const possibleTables = ['accounts', 'characters', 'users', 'agents', 'profiles'];
-    const possibleIdFields = ['id', 'character_id', 'user_id', 'uuid', 'agent_id'];
-    
-    // Results object to track findings
-    const results = {
-      tableFound: null as string | null,
-      idField: null as string | null,
-      data: null as any | null
-    };
-    
-    // Try to query each possible table
-    for (const table of possibleTables) {
-      try {
-        console.log(`Checking table: ${table}`);
-        
-        // First see if the table exists
-        const { error: tableError } = await supabase
-          .from(table)
-          .select('count')
-          .limit(1);
-        
-        if (tableError) {
-          console.log(`Table ${table} not found or not accessible:`, tableError);
-          continue; // Skip to next table
-        }
-        
-        console.log(`Table ${table} exists, checking for character`);
-        
-        // Try each possible ID field in this table
-        for (const idField of possibleIdFields) {
-          try {
-            const { data, error } = await supabase
-              .from(table)
-              .select('*')
-              .eq(idField, characterId)
-              .single();
-            
-            if (error) {
-              console.log(`No match in ${table} using ${idField}:`, error);
-              continue; // Try next ID field
-            }
-            
-            if (data) {
-              console.log(`✅ FOUND CHARACTER in table '${table}' using ID field '${idField}'`, data);
-              results.tableFound = table;
-              results.idField = idField;
-              results.data = data;
-              return results; // Found it!
-            }
-          } catch (fieldError) {
-            console.log(`Error querying ${table}.${idField}:`, fieldError);
-          }
-        }
-      } catch (tableError) {
-        console.log(`Error checking table ${table}:`, tableError);
-      }
-    }
-    
-    console.log('Could not find character in any table');
-    return results;
-  };
-
   const handleDeleteCharacter = async () => {
     console.log('=== DELETE OPERATION STARTED ===');
     console.log('Attempting to delete character:', character);
