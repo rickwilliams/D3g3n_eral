@@ -3,3 +3,5 @@ export interface IAttachment {
     contentType: string;
     title: string;
 }
+
+export * from './character';

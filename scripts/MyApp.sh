@@ -185,7 +185,7 @@ fi
 
 # 3. Start the main ElizaOS server in the foreground
 log "\n${BLUE}Starting ElizaOS main application...${NC}"
-log "${BLUE}Using character: characters/D3g3n_eral.json${NC}"
+log "${BLUE}Using character: characters/snoop.json${NC}"
 log "${GREEN}==========================================${NC}"
 log "${GREEN}To test webhooks, open a new terminal and run:${NC}"
 log "${YELLOW}cd packages/user-management-api && pnpm test-webhook-simple${NC}"
@@ -193,7 +193,7 @@ log "${GREEN}==========================================${NC}"
 log "${BLUE}Full logs being saved to: ${LOG_FILE}${NC}"
 
 # Run the main app and capture its output to the log file
-pnpm start --characters="characters/D3g3n_eral.json" 2>&1 | tee -a "$LOG_FILE"
+pnpm start --characters="characters/snoop.json" 2>&1 | tee -a "$LOG_FILE"
 
 # If we get here, the main app exited, so run the cleanup
 cleanup 

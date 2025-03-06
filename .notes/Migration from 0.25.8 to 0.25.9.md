@@ -162,7 +162,7 @@ The migration to v0.25.9 will provide a more stable foundation for these develop
 
 The current database schema in Supabase includes:
 - `accounts` table with fields for user information
-- `is_agent` flag to distinguish characters from users
+- `user_id` the clerk_key that identifies the autheticated logged in user to the app as the owner of the account/character being created
 - `details` JSONB field for storing character configuration
 
 This schema should remain compatible with v0.25.9, but we should verify that any changes to character loading don't affect our database integration.
