@@ -400,7 +400,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="name"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Character Name</FormLabel>
               <FormControl>
@@ -414,7 +414,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="avatarUrl"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FileUpload
               label="Avatar"
               description="Upload an image or provide a URL"
@@ -429,7 +429,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="bio"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Character Bio</FormLabel>
               <FormControl>
@@ -450,7 +450,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="lore"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Character Lore (Optional)</FormLabel>
               <FormControl>
@@ -477,7 +477,7 @@ export function CreateCharacterForm({
           <FormField
             control={form.control}
             name="style.all"
-            render={({ field }) => (
+            render={({ field }: { field: any }) => (
               <FormItem>
                 <FormLabel>General Style (applies to all contexts)</FormLabel>
                 <FormControl>
@@ -506,7 +506,7 @@ export function CreateCharacterForm({
           <FormField
             control={form.control}
             name="style.chat"
-            render={({ field }) => (
+            render={({ field }: { field: any }) => (
               <FormItem>
                 <FormLabel>Chat Style</FormLabel>
                 <FormControl>
@@ -535,7 +535,7 @@ export function CreateCharacterForm({
           <FormField
             control={form.control}
             name="style.post"
-            render={({ field }) => (
+            render={({ field }: { field: any }) => (
               <FormItem>
                 <FormLabel>Post Style</FormLabel>
                 <FormControl>
@@ -565,7 +565,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="topics"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Topics of Interest</FormLabel>
               <FormControl>
@@ -588,7 +588,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="adjectives"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Character Adjectives</FormLabel>
               <FormControl>
@@ -663,7 +663,7 @@ export function CreateCharacterForm({
       <FormField
         control={form.control}
         name="clients"
-        render={({ field }) => (
+        render={({ field }: { field: any }) => (
           <FormItem>
             <div className="grid grid-cols-1 gap-4">
               {clientOptions.map((client) => (
@@ -710,7 +710,7 @@ export function CreateCharacterForm({
       <FormField
         control={form.control}
         name="plugins"
-        render={({ field }) => (
+        render={({ field }: { field: any }) => (
           <FormItem>
             <div className="grid grid-cols-1 gap-4">
               {pluginOptions.map((plugin) => (

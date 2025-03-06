@@ -485,7 +485,7 @@ export function EditCharacterForm({
         <FormField
           control={form.control}
           name="name"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Character Name</FormLabel>
               <FormControl>
@@ -499,16 +499,16 @@ export function EditCharacterForm({
         <FormField
           control={form.control}
           name="avatarUrl"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FileUpload
               label="Avatar"
               description="Upload an image or provide a URL"
               value={isBlobValid ? field.value : ''}
-              onChange={(url) => {
+              onChange={(url: string) => {
                 field.onChange(url);
                 setIsBlobValid(true); // Reset validity when value changes
               }}
-              onFileChange={(file) => {
+              onFileChange={(file: File) => {
                 setAvatarFile(file);
                 setIsBlobValid(true); // Reset validity when file changes
               }}
@@ -520,7 +520,7 @@ export function EditCharacterForm({
         <FormField
           control={form.control}
           name="bio"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Character Bio</FormLabel>
               <FormControl>
@@ -541,7 +541,7 @@ export function EditCharacterForm({
         <FormField
           control={form.control}
           name="lore"
-          render={({ field }) => (
+          render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Character Lore (Optional)</FormLabel>
               <FormControl>
@@ -808,7 +808,7 @@ export function EditCharacterForm({
                 `}
                 onClick={() => {
                   const updatedClients = field.value.includes(client.value)
-                    ? field.value.filter(c => c !== client.value)
+                    ? field.value.filter((c: string) => c !== client.value)
                     : [...field.value, client.value];
                   field.onChange(updatedClients);
                 }}
@@ -850,7 +850,7 @@ export function EditCharacterForm({
                 `}
                 onClick={() => {
                   const updatedPlugins = field.value.includes(plugin.value)
-                    ? field.value.filter(p => p !== plugin.value)
+                    ? field.value.filter((p: string) => p !== plugin.value)
                     : [...field.value, plugin.value];
                   field.onChange(updatedPlugins);
                 }}

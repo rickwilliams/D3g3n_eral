@@ -18,15 +18,15 @@ export async function createSupabaseClient() {
       {
         global: {
           // Using fetch override to add the Clerk token to requests
-          fetch: async (url: string, options: RequestInit = {}) => {
-            const headers = new Headers(options?.headers);
+          fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+            const headers = new Headers(init?.headers);
             
             if (clerkToken) {
               // Add the Clerk JWT token to the Authorization header
               headers.set('Authorization', `Bearer ${clerkToken}`);
             }
             
-            return fetch(url, { ...options, headers });
+            return fetch(input, { ...init, headers });
           }
         }
       }
