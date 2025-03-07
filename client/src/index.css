@@ -4,64 +4,104 @@
 
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 240 10% 3.9%;
-        --card: 0 0% 93%;
-        --card-foreground: 240 10% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 240 10% 3.9%;
-        --primary: 240 5.9% 10%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 240 4.8% 95.9%;
-        --secondary-foreground: 240 5.9% 10%;
-        --muted: 240 4.8% 95.9%;
-        --muted-foreground: 240 3.8% 46.1%;
-        --accent: 240 4.8% 97%;
-        --accent-foreground: 240 5.9% 10%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 240 5.9% 90%;
-        --input: 240 5.9% 90%;
-        --ring: 240 5.9% 10%;
-        --radius: 1rem;
-        --sidebar-background: 0 0% 98%;
-        --sidebar-foreground: 240 5.3% 26.1%;
-        --sidebar-primary: 240 5.9% 10%;
-        --sidebar-primary-foreground: 0 0% 98%;
-        --sidebar-accent: 240 4.8% 95.9%;
-        --sidebar-accent-foreground: 240 5.9% 10%;
-        --sidebar-border: 220 13% 91%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
+        /* Main background and text */
+        --background: 60 8% 93%;      /* #EDEDE9 - Light grayish beige */
+        --foreground: 26 16% 32%;     /* #6c5f54 - Dark warm gray for text */
+        
+        /* Card styling */
+        --card: 60 8% 95%;            /* Slightly lighter version of EDEDE9 */
+        --card-foreground: 26 16% 32%; /* #6c5f54 - Dark warm gray for text */
+        
+        /* Popover styling */
+        --popover: 60 8% 93%;         /* #EDEDE9 - Light grayish beige */
+        --popover-foreground: 26 16% 32%; /* #6c5f54 - Dark warm gray for text */
+        
+        /* Primary buttons and accents */
+        --primary: 33 36% 70%;        /* #D5BDAF - Light brownish pink */
+        --primary-foreground: 0 0% 100%; /* White text on primary */
+        
+        /* Secondary elements */
+        --secondary: 39 25% 84%;      /* #E3D5CA - Light pinkish tan */
+        --secondary-foreground: 26 24% 25%; /* Darker version of text color */
+        
+        /* Muted elements */
+        --muted: 33 23% 89%;          /* #F5EBE0 - Very light warm cream */
+        --muted-foreground: 26 16% 42%; /* Medium warm gray */
+        
+        /* Accent elements */
+        --accent: 25 17% 80%;         /* #D6CCC2 - Light grayish tan */
+        --accent-foreground: 26 24% 25%; /* Darker version of text color */
+        
+        /* Destructive actions */
+        --destructive: 0 70% 60%;      /* Keeping a red tone for alerts */
+        --destructive-foreground: 0 0% 100%; /* White text on destructive */
+        
+        /* Border and input fields */
+        --border: 25 17% 82%;          /* Slightly darker D6CCC2 */
+        --input: 25 17% 82%;           /* Slightly darker D6CCC2 */
+        --ring: 33 36% 70%;            /* #D5BDAF - Light brownish pink */
+        
+        /* Border radius */
+        --radius: 0.5rem;
+        
+        /* Sidebar styling */
+        --sidebar-background: 60 8% 96%; /* Lighter version of EDEDE9 */
+        --sidebar-foreground: 26 16% 32%; /* #6c5f54 - Dark warm gray */
+        --sidebar-primary: 33 36% 70%;    /* #D5BDAF - Light brownish pink */
+        --sidebar-primary-foreground: 0 0% 100%; /* White */
+        --sidebar-accent: 25 17% 80%;     /* #D6CCC2 - Light grayish tan */
+        --sidebar-accent-foreground: 26 24% 25%; /* Darker version of text color */
+        --sidebar-border: 39 25% 88%;     /* Lighter version of E3D5CA */
+        --sidebar-ring: 33 36% 70%;       /* #D5BDAF - Light brownish pink */
     }
 
     .dark {
-        --background: 0 0% 9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 11.5%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 12%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 240 5.9% 10%;
-        --secondary: 240 3.7% 15.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 240 3.7% 15.9%;
-        --muted-foreground: 240 5% 64.9%;
-        --accent: 240 3.7% 15.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 240 3.7% 15.9%;
-        --input: 240 3.7% 15.9%;
-        --ring: 240 4.9% 83.9%;
-        --sidebar-background: 240 5.9% 10%;
-        --sidebar-foreground: 240 4.8% 95.9%;
-        --sidebar-primary: 224.3 76.3% 48%;
-        --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 240 3.7% 15.9%;
-        --sidebar-accent-foreground: 240 4.8% 95.9%;
-        --sidebar-border: 240 3.7% 15.9%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
+        /* Main background and text */
+        --background: 26 16% 22%;      /* Dark version of the warm gray */
+        --foreground: 60 8% 93%;       /* #EDEDE9 - Light grayish beige */
+        
+        /* Card styling */
+        --card: 26 16% 24%;            /* Slightly lighter dark background */
+        --card-foreground: 60 8% 93%;  /* #EDEDE9 - Light grayish beige */
+        
+        /* Popover styling */
+        --popover: 26 16% 22%;         /* Dark version of the warm gray */
+        --popover-foreground: 60 8% 93%; /* #EDEDE9 - Light grayish beige */
+        
+        /* Primary buttons and accents */
+        --primary: 33 36% 75%;         /* Brighter version of D5BDAF for dark mode */
+        --primary-foreground: 26 16% 20%; /* Dark warm gray for text on primary */
+        
+        /* Secondary elements */
+        --secondary: 26 16% 30%;       /* Medium-dark warm gray */
+        --secondary-foreground: 60 8% 93%; /* #EDEDE9 - Light grayish beige */
+        
+        /* Muted elements */
+        --muted: 26 16% 28%;           /* Slightly lighter than background */
+        --muted-foreground: 33 23% 85%; /* Lighter version of F5EBE0 */
+        
+        /* Accent elements */
+        --accent: 25 17% 55%;          /* Darker version of D6CCC2 */
+        --accent-foreground: 60 8% 93%; /* #EDEDE9 - Light grayish beige */
+        
+        /* Destructive actions */
+        --destructive: 0 60% 45%;      /* Darker red for dark mode */
+        --destructive-foreground: 0 0% 100%; /* White text on destructive */
+        
+        /* Border and input fields */
+        --border: 26 16% 30%;          /* Medium-dark warm gray */
+        --input: 26 16% 30%;           /* Medium-dark warm gray */
+        --ring: 33 36% 75%;            /* Brighter version of D5BDAF */
+        
+        /* Sidebar styling */
+        --sidebar-background: 26 16% 18%; /* Slightly darker than main background */
+        --sidebar-foreground: 60 8% 93%; /* #EDEDE9 - Light grayish beige */
+        --sidebar-primary: 33 36% 75%;   /* Brighter version of D5BDAF */
+        --sidebar-primary-foreground: 26 16% 20%; /* Dark warm gray */
+        --sidebar-accent: 25 17% 55%;    /* Darker version of D6CCC2 */
+        --sidebar-accent-foreground: 60 8% 93%; /* #EDEDE9 - Light grayish beige */
+        --sidebar-border: 26 16% 25%;    /* Slightly lighter than sidebar bg */
+        --sidebar-ring: 33 36% 75%;      /* Brighter version of D5BDAF */
     }
 }
 
@@ -73,4 +113,78 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+}
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.8);
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+/* Ensure scrolling works on all browsers */
+.modal-scrollable-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+  -webkit-overflow-scrolling: touch; /* Better scrolling for iOS devices */
+  
+  /* Edge/IE compatibility */
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+  border: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.7);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
 }

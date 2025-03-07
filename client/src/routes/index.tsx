@@ -4,21 +4,14 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import App from "../App";
 import Chat from "./chat";
 import Home from "./home";
-import Overview from "./overview";
+import SignIn from "./sign-in";
+import SignUp from "./sign-up";
 import CreateCharacterPage from "./create-character";
 import EditCharacterPage from "./edit-character";
-import { SignIn } from "../components/auth/SignIn";
-import { SignUp } from "../components/auth/SignUp";
-import { ProtectedRoute } from "../components/auth/ProtectedRoute";
+import { Toaster } from "../components/ui/toaster";
 
 // Create a client
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: Number.POSITIVE_INFINITY,
-    },
-  },
-});
+export const queryClient = new QueryClient();
 
 // Create the router configuration
 const rootRoute = new RootRoute({
@@ -26,6 +19,7 @@ const rootRoute = new RootRoute({
     <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
       <QueryClientProvider client={queryClient}>
         <App />
+        <Toaster />
       </QueryClientProvider>
     </ClerkProvider>
   ),
@@ -47,41 +41,19 @@ const indexRoute = new Route({
 const createCharacterRoute = new Route({
   getParentRoute: () => layoutRoute,
   path: "/create-character",
-  component: () => (
-    <ProtectedRoute>
-      <CreateCharacterPage />
-    </ProtectedRoute>
-  ),
+  component: CreateCharacterPage,
 });
 
 const editCharacterRoute = new Route({
   getParentRoute: () => layoutRoute,
   path: "/edit-character/$characterId",
-  component: () => (
-    <ProtectedRoute>
-      <EditCharacterPage />
-    </ProtectedRoute>
-  ),
+  component: EditCharacterPage,
 });
 
 const chatRoute = new Route({
   getParentRoute: () => layoutRoute,
   path: "/chat/$agentId",
-  component: () => (
-    <ProtectedRoute>
-      <Chat />
-    </ProtectedRoute>
-  ),
-});
-
-const overviewRoute = new Route({
-  getParentRoute: () => layoutRoute,
-  path: "/settings/$agentId",
-  component: () => (
-    <ProtectedRoute>
-      <Overview />
-    </ProtectedRoute>
-  ),
+  component: Chat,
 });
 
 const signInRoute = new Route({
@@ -103,7 +75,6 @@ const routeTree = rootRoute.addChildren([
     chatRoute,
     createCharacterRoute,
     editCharacterRoute,
-    overviewRoute,
     signInRoute,
     signUpRoute,
   ]),
