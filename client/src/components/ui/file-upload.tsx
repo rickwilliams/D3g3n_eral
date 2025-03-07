@@ -8,6 +8,7 @@ interface FileUploadProps {
   value?: string;
   onChange: (url: string) => void;
   onFileChange?: (file: File) => void;
+  accept?: string;
 }
 
 export function FileUpload({
@@ -15,7 +16,8 @@ export function FileUpload({
   description,
   value = '',
   onChange,
-  onFileChange
+  onFileChange,
+  accept
 }: FileUploadProps) {
   const [isUploadMode, setIsUploadMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +65,7 @@ export function FileUpload({
             ref={fileInputRef} 
             className="hidden" 
             onChange={handleFileChange} 
+            accept={accept}
           />
           <Button 
             type="button"

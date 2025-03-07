@@ -7,8 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { uploadToS3, convertBlobToS3Url } from "@/lib/s3";
-import { characterSchema } from "@/types/character";
-import { createCharacter } from "@/lib/character-api";
 
 // UI Components
 import {
@@ -679,7 +677,7 @@ export function CreateCharacterForm({
                           field.onChange([...field.value, client.value]);
                         } else {
                           field.onChange(
-                            field.value.filter((value) => value !== client.value)
+                            field.value.filter((value: string) => value !== client.value)
                           );
                         }
                       }}
@@ -726,7 +724,7 @@ export function CreateCharacterForm({
                           field.onChange([...field.value, plugin.value]);
                         } else {
                           field.onChange(
-                            field.value.filter((value) => value !== plugin.value)
+                            field.value.filter((value: string) => value !== plugin.value)
                           );
                         }
                       }}

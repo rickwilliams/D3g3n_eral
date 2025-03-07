@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Badge } from './badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './command';
@@ -18,6 +19,7 @@ interface MultiSelectProps {
   placeholder?: string;
   className?: string;
   emptyMessage?: string;
+  allowUserInput?: boolean;
 }
 
 export function MultiSelect({
@@ -26,9 +28,11 @@ export function MultiSelect({
   onChange,
   placeholder = 'Select items',
   className,
-  emptyMessage = 'No items found.'
+  emptyMessage = 'No items found.',
+  allowUserInput = false
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
 
   const selectedOptions = options.filter(option => selected.includes(option.value));
 
@@ -41,6 +45,14 @@ export function MultiSelect({
       onChange(selected.filter(s => s !== value));
     } else {
       onChange([...selected, value]);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (allowUserInput && e.key === 'Enter' && inputValue && !options.some(option => option.value === inputValue)) {
+      e.preventDefault();
+      onChange([...selected, inputValue]);
+      setInputValue('');
     }
   };
 
@@ -78,7 +90,12 @@ export function MultiSelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search..." />
+          <CommandInput 
+            placeholder="Search..." 
+            value={inputValue}
+            onValueChange={setInputValue}
+            onKeyDown={handleKeyDown}
+          />
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>

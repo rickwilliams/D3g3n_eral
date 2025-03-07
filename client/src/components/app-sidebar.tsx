@@ -63,8 +63,8 @@ export function AppSidebar() {
                             {query?.isPending ? (
                                 <div>
                                     {Array.from({ length: 5 }).map(
-                                        (_, _index) => (
-                                            <SidebarMenuItem key={"skeleton-item"}>
+                                        (_, index) => (
+                                            <SidebarMenuItem key={`skeleton-item-${index}`}>
                                                 <SidebarMenuSkeleton />
                                             </SidebarMenuItem>
                                         )

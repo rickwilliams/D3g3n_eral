@@ -5,7 +5,7 @@ import path from "node:path";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-    const envDir = path.resolve(__dirname, "..");
+    const envDir = path.resolve(__dirname);
     const env = loadEnv(mode, envDir, "");
     return {
         plugins: [
@@ -27,6 +27,21 @@ export default defineConfig(({ mode }) => {
             ),
             "import.meta.env.VITE_SERVER_BASE_URL": JSON.stringify(
                 env.SERVER_BASE_URL
+            ),
+            "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify(
+                env.VITE_CLERK_PUBLISHABLE_KEY
+            ),
+            "import.meta.env.VITE_CLERK_SIGN_IN_URL": JSON.stringify(
+                env.VITE_CLERK_SIGN_IN_URL
+            ),
+            "import.meta.env.VITE_CLERK_SIGN_UP_URL": JSON.stringify(
+                env.VITE_CLERK_SIGN_UP_URL
+            ),
+            "import.meta.env.VITE_CLERK_AFTER_SIGN_IN_URL": JSON.stringify(
+                env.VITE_CLERK_AFTER_SIGN_IN_URL
+            ),
+            "import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL": JSON.stringify(
+                env.VITE_CLERK_AFTER_SIGN_UP_URL
             )
         },
         build: {
