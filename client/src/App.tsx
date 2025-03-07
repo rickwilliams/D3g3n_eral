@@ -5,17 +5,11 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { Toaster } from "./components/ui/toaster";
 import useVersion from "./hooks/use-version";
 import { Outlet } from "@tanstack/react-router";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 function App() {
     useVersion();
     return (
-        <div
-            className="dark antialiased"
-            style={{
-                colorScheme: "dark",
-            }}
-        >
+        <div className="min-h-screen bg-background">
             <TooltipProvider delayDuration={0}>
                 <SidebarProvider>
                     <AppSidebar />

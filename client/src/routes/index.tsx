@@ -7,7 +7,6 @@ import Home from "./home";
 import Overview from "./overview";
 import CreateCharacterPage from "./create-character";
 import EditCharacterPage from "./edit-character";
-import { Toaster } from "../components/ui/toaster";
 import { SignIn } from "../components/auth/SignIn";
 import { SignUp } from "../components/auth/SignUp";
 import { ProtectedRoute } from "../components/auth/ProtectedRoute";
@@ -27,7 +26,6 @@ const rootRoute = new RootRoute({
     <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
       <QueryClientProvider client={queryClient}>
         <App />
-        <Toaster />
       </QueryClientProvider>
     </ClerkProvider>
   ),
