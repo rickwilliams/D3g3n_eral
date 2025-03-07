@@ -1,16 +1,20 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App.tsx";
+import { router, queryClient } from './routes/index'; // Import both router and queryClient
+import { QueryClientProvider } from "@tanstack/react-query";
+import { RouterProvider } from "@tanstack/react-router";
 
-const rootElement = document.getElementById("root");
+// Replace top-level await with an IIFE
+(async () => {
+  // Wait for the router to be ready
+  await router.load();
 
-if (!rootElement) {
-    throw new Error("Root element not found");
-}
-
-createRoot(rootElement).render(
-    <StrictMode>
-        <App />
-    </StrictMode>
-);
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+})();

@@ -14,13 +14,13 @@ import {
     SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { apiClient } from "@/lib/api";
-import { NavLink, useLocation } from "react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import type { UUID } from "@elizaos/core";
 import { Book, Cog, User } from "lucide-react";
 import ConnectionStatus from "./connection-status";
 
 export function AppSidebar() {
-    const location = useLocation();
+    const router = useRouter();
     const query = useQuery({
         queryKey: ["agents"],
         queryFn: () => apiClient.getAgents(),
@@ -35,7 +35,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <NavLink to="/">
+                            <Link to="/">
                                 <img
                                     alt="elizaos-icon"
                                     src="/elizaos-icon.png"
@@ -50,7 +50,7 @@ export function AppSidebar() {
                                     </span>
                                     <span className="">v{info?.version}</span>
                                 </div>
-                            </NavLink>
+                            </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
@@ -75,11 +75,12 @@ export function AppSidebar() {
                                     {agents?.map(
                                         (agent: { id: UUID; name: string }) => (
                                             <SidebarMenuItem key={agent.id}>
-                                                <NavLink
-                                                    to={`/chat/${agent.id}`}
+                                                <Link
+                                                    to="/chat/$agentId"
+                                                    params={{ agentId: agent.id }}
                                                 >
                                                     <SidebarMenuButton
-                                                        isActive={location.pathname.includes(
+                                                        isActive={router.state.location.pathname.includes(
                                                             agent.id
                                                         )}
                                                     >
@@ -88,7 +89,7 @@ export function AppSidebar() {
                                                             {agent.name}
                                                         </span>
                                                     </SidebarMenuButton>
-                                                </NavLink>
+                                                </Link>
                                             </SidebarMenuItem>
                                         )
                                     )}
@@ -101,14 +102,15 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <NavLink
-                            to="https://elizaos.github.io/eliza/docs/intro/"
+                        <a
+                            href="https://elizaos.github.io/eliza/docs/intro/"
                             target="_blank"
+                            rel="noopener noreferrer"
                         >
                             <SidebarMenuButton>
                                 <Book /> Documentation
                             </SidebarMenuButton>
-                        </NavLink>
+                        </a>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton disabled>
