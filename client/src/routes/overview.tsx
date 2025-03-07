@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import Overview from "@/components/overview";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import type { UUID } from "@elizaos/core";
 
 export default function AgentRoute() {
-    const { agentId } = useParams<{ agentId: UUID }>();
+    const { agentId } = useParams({ from: "/layout/settings/$agentId" });
 
     const query = useQuery({
         queryKey: ["agent", agentId],

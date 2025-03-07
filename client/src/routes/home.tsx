@@ -10,7 +10,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
-import { NavLink } from "react-router";
+import { Link } from "@tanstack/react-router";
 import type { UUID } from "@elizaos/core";
 import { formatAgentName } from "@/lib/utils";
 
@@ -41,8 +41,9 @@ export default function Home() {
                         </CardContent>
                         <CardFooter>
                             <div className="flex items-center gap-4 w-full">
-                                <NavLink
-                                    to={`/chat/${agent.id}`}
+                                <Link
+                                    to="/chat/$agentId"
+                                    params={{ agentId: agent.id }}
                                     className="w-full grow"
                                 >
                                     <Button
@@ -51,15 +52,15 @@ export default function Home() {
                                     >
                                         Chat
                                     </Button>
-                                </NavLink>
-                                <NavLink
-                                    to={`/settings/${agent.id}`}
-                                    key={agent.id}
+                                </Link>
+                                <Link
+                                    to="/settings/$agentId"
+                                    params={{ agentId: agent.id }}
                                 >
                                     <Button size="icon" variant="outline">
                                         <Cog />
                                     </Button>
-                                </NavLink>
+                                </Link>
                             </div>
                         </CardFooter>
                     </Card>
