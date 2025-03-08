@@ -9,9 +9,17 @@ import SignUp from "./sign-up";
 import CreateCharacterPage from "./create-character";
 import EditCharacterPage from "./edit-character";
 import { Toaster } from "../components/ui/toaster";
+import OverviewPage from "./overview";
+import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 
 // Create a client
-export const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Number.POSITIVE_INFINITY,
+    },
+  },
+});
 
 // Create the router configuration
 const rootRoute = new RootRoute({
@@ -41,19 +49,33 @@ const indexRoute = new Route({
 const createCharacterRoute = new Route({
   getParentRoute: () => layoutRoute,
   path: "/create-character",
-  component: CreateCharacterPage,
+  component: () => (
+    <ProtectedRoute>
+      <CreateCharacterPage />
+    </ProtectedRoute>
+  ),
 });
 
 const editCharacterRoute = new Route({
   getParentRoute: () => layoutRoute,
   path: "/edit-character/$characterId",
-  component: EditCharacterPage,
+  component: () => (
+    <ProtectedRoute>
+      <EditCharacterPage />
+    </ProtectedRoute>
+  ),
 });
 
 const chatRoute = new Route({
   getParentRoute: () => layoutRoute,
   path: "/chat/$agentId",
   component: Chat,
+});
+
+const overviewRoute = new Route({
+  getParentRoute: () => layoutRoute,
+  path: "/settings/$agentId",
+  component: OverviewPage,
 });
 
 const signInRoute = new Route({
@@ -75,6 +97,7 @@ const routeTree = rootRoute.addChildren([
     chatRoute,
     createCharacterRoute,
     editCharacterRoute,
+    overviewRoute,
     signInRoute,
     signUpRoute,
   ]),

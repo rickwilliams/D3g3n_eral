@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@clerk/clerk-react";
-import { createSupabaseClient } from "@/lib/auth";
 import PageTitle from "@/components/page-title";
 import { EditCharacterForm } from "@/components/edit-character";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { apiClient } from "@/lib/api";
 
 export default function EditCharacterPage() {
   const params = useParams({ from: "/layout/edit-character/$characterId" });
@@ -29,22 +29,14 @@ export default function EditCharacterPage() {
       }
 
       try {
-        const supabase = await createSupabaseClient();
-        const { data, error } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('id', characterId)
-          .single();
+        // Use the new API client to fetch the character
+        const characterData = await apiClient.getUserCharacter(characterId);
 
-        if (error) {
-          throw error;
-        }
-
-        if (!data) {
+        if (!characterData) {
           throw new Error("Character not found");
         }
 
-        setCharacter(data);
+        setCharacter(characterData);
       } catch (err) {
         console.error("Error fetching character:", err);
         setError(err instanceof Error ? err.message : "Failed to load character");

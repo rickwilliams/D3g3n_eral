@@ -1,16 +1,28 @@
 import { useAuth } from '@clerk/clerk-react';
 import { Navigate } from '@tanstack/react-router';
-import { ReactNode } from 'react';
+import { useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isSignedIn, isLoaded } = useAuth();
-  
+  const { isLoaded, isSignedIn } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to access this feature",
+        variant: "destructive",
+      });
+    }
+  }, [isLoaded, isSignedIn, toast]);
+
   if (!isLoaded) {
-    return <div>Loading...</div>;
+    return <div className="p-8 flex justify-center">Loading authentication...</div>;
   }
   
   if (!isSignedIn) {

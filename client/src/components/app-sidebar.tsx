@@ -16,11 +16,15 @@ import {
 import { apiClient } from "@/lib/api";
 import { Link, useRouter } from "@tanstack/react-router";
 import type { UUID } from "@elizaos/core";
-import { Book, Cog, User } from "lucide-react";
+import { Book, Cog, Plus, User } from "lucide-react";
 import ConnectionStatus from "./connection-status";
+import { Button } from "./ui/button";
+import { useAuth } from "@clerk/clerk-react";
 
 export function AppSidebar() {
     const router = useRouter();
+    const { isLoaded, isSignedIn, signOut } = useAuth();
+    
     const query = useQuery({
         queryKey: ["agents"],
         queryFn: () => apiClient.getAgents(),
@@ -29,30 +33,50 @@ export function AppSidebar() {
 
     const agents = query?.data?.agents;
 
+    const handleCreateCharacter = () => {
+        router.navigate({ to: "/create-character" });
+    };
+
+    const handleSignOut = async () => {
+        await signOut();
+        router.navigate({ to: "/" });
+    };
+
     return (
         <Sidebar>
             <SidebarHeader>
                 <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link to="/">
-                                <img
-                                    alt="elizaos-icon"
-                                    src="/elizaos-icon.png"
-                                    width="100%"
-                                    height="100%"
-                                    className="size-7"
-                                />
+                    <div className="flex items-center justify-between w-full px-2">
+                        <SidebarMenuItem>
+                            <SidebarMenuButton size="lg" asChild>
+                                <Link to="/">
+                                    <img
+                                        alt="elizaos-icon"
+                                        src="/elizaos-icon.png"
+                                        width="100%"
+                                        height="100%"
+                                        className="size-7"
+                                    />
 
-                                <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-semibold">
-                                        ElizaOS
-                                    </span>
-                                    <span className="">v{info?.version}</span>
-                                </div>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
+                                    <div className="flex flex-col gap-0.5 leading-none">
+                                        <span className="font-semibold">
+                                            ElizaOS
+                                        </span>
+                                        <span className="">v{info?.version}</span>
+                                    </div>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="ml-auto"
+                            onClick={handleCreateCharacter}
+                            title="Create new character"
+                        >
+                            <Plus className="size-5" />
+                        </Button>
+                    </div>
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
@@ -111,6 +135,27 @@ export function AppSidebar() {
                                 <Book /> Documentation
                             </SidebarMenuButton>
                         </a>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        {isLoaded ? (
+                            isSignedIn ? (
+                                <SidebarMenuButton onClick={handleSignOut}>
+                                    <User /> Sign Out
+                                </SidebarMenuButton>
+                            ) : (
+                                <Link 
+                                    to="/sign-in" 
+                                >
+                                    <SidebarMenuButton>
+                                        <User /> Sign In
+                                    </SidebarMenuButton>
+                                </Link>
+                            )
+                        ) : (
+                            <SidebarMenuButton disabled>
+                                <User /> Loading...
+                            </SidebarMenuButton>
+                        )}
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton disabled>

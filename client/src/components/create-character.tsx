@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { createSupabaseClient, setupTokenRetrieval } from "@/lib/auth";
+import { createSupabaseClient, setupTokenRetrieval } from "@/lib/supabase-client";
 import { v4 as uuidv4 } from 'uuid';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { uploadToS3, convertBlobToS3Url } from "@/lib/s3";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiClient } from '@/lib/api';
+import { createCharacter } from '../lib/character-api';
 
 // UI Components
 import {
@@ -39,17 +42,17 @@ const characterFormSchema = z.object({
   bio: z.string().min(1, "Character bio is required"),
   lore: z.string().optional(),
   style: z.object({
-    all: z.array(z.string()),
-    chat: z.array(z.string()),
-    post: z.array(z.string())
+    all: z.union([z.array(z.string()), z.string()]),
+    chat: z.union([z.array(z.string()), z.string()]),
+    post: z.union([z.array(z.string()), z.string()])
   }),
-  topics: z.array(z.string()),
-  adjectives: z.array(z.string()),
+  topics: z.union([z.array(z.string()), z.string()]),
+  adjectives: z.union([z.array(z.string()), z.string()]),
   avatarUrl: z.string().optional(),
   clients: z.array(z.string()),
   plugins: z.array(z.string()),
   // Knowledge files will be handled separately
-  knowledge: z.array(z.string()).default([]),
+  knowledge: z.union([z.array(z.string()), z.string()]).default([]),
   templates: z.record(z.string()).default({}),
 });
 
@@ -84,13 +87,18 @@ const adjectiveOptions: Option[] = [
 
 // Complete list of clients based on elizaOS registry
 const clientOptions: Option[] = [
-  { label: "Direct", value: "direct", description: "Direct interaction with users via chat interface" },
-  { label: "Auto", value: "auto", description: "Automated responses to user queries" },
+  // Hidden by default as they're included automatically
+  // { label: "Direct", value: "direct", description: "Direct interaction with users via chat interface" },
+  // { label: "Auto", value: "auto", description: "Automated responses to user queries" },
+  { label: "Instagram", value: "instagram", description: "Instagram social media integration" },
+  { label: "YouTube", value: "youtube", description: "YouTube video platform integration" },
+  { label: "TikTok", value: "tiktok", description: "TikTok short-form video integration" },
   { label: "Twitter/X", value: "twitter", description: "Twitter/X social media integration" },
   { label: "Discord", value: "discord", description: "Discord bot integration" },
   { label: "Telegram", value: "telegram", description: "Telegram messaging integration" },
   { label: "Slack", value: "slack", description: "Slack workspace integration" },
   { label: "WhatsApp", value: "whatsapp", description: "WhatsApp messaging integration" },
+  // Other clients listed last
   { label: "Farcaster", value: "farcaster", description: "Web3 social networking integration" },
   { label: "GitHub", value: "github", description: "GitHub integration for repositories and issues" },
   { label: "Lens", value: "lens", description: "Client for Lens Protocol social networking" },
@@ -114,16 +122,21 @@ const pluginOptions: Option[] = [
   { label: "3D Generation", value: "3d-generation", description: "Generate 3D objects based on text prompts" },
 ];
 
+// Update the types at the top of the file
+interface TemplateOption {
+  label: string;
+  value: string;
+  description: string;
+}
+
 // Complete list of available templates
-const templateOptions = [
-  { label: "Goal Template", value: "goalTemplate", description: "Define the character's overarching purpose and mission" },
-  { label: "Objectives Template", value: "objectivesTemplate", description: "Set specific objectives and tasks for the character" },
-  { label: "System Prompt", value: "systemPrompt", description: "Define the base system prompt for the character" },
-  { label: "Persona Template", value: "personaTemplate", description: "Detailed definition of the character's personality" },
-  { label: "Knowledge Base", value: "knowledgeBase", description: "Structure and organize the character's knowledge" },
-  { label: "Interaction Style", value: "interactionStyle", description: "Define how the character interacts with users" },
-  { label: "Decision Framework", value: "decisionFramework", description: "Rules for how the character makes decisions" },
-  { label: "Memory Management", value: "memoryManagement", description: "Configure how the character stores and recalls information" },
+const templateOptions: TemplateOption[] = [
+  { label: "Goals", value: "goalsTemplate", description: "Define the character's goals and motivations" },
+  { label: "Facts", value: "factsTemplate", description: "Define facts about the character" },
+  { label: "Twitter Post", value: "twitterPostTemplate", description: "Template for Twitter/X posts" },
+  { label: "Twitter Action", value: "twitterActionTemplate", description: "Define how the character responds on Twitter/X" },
+  { label: "Instagram Post", value: "instagramPostTemplate", description: "Template for Instagram posts" },
+  { label: "Instagram Action", value: "instagramActionTemplate", description: "Define how the character responds on Instagram" },
 ];
 
 interface CreateCharacterFormProps {
@@ -137,6 +150,7 @@ export function CreateCharacterForm({
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -178,54 +192,13 @@ export function CreateCharacterForm({
     setupAuth();
   }, [setupAuth]);
 
-  const handleSubmit = async (values: CharacterFormValues) => {
-    if (!isSignedIn || !user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to create a character",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleSubmit = async (values: any) => {
+    setIsSubmitting(true);
     
     try {
-      setIsSubmitting(true);
-      
-      // Format bio and lore as arrays
-      const bioArray = values.bio.split('\n').filter(item => item.trim() !== '');
-      const loreArray = values.lore ? values.lore.split('\n').filter(item => item.trim() !== '') : [];
-      
-      // Create unique ID for the character
-      const characterId = uuidv4();
-      
-      // Upload avatar if provided
-      let avatarUrl = values.avatarUrl || "";
-      
-      // Check if avatarUrl is a blob URL and convert it to an S3 URL
-      if (avatarUrl && avatarUrl.startsWith('blob:')) {
-        try {
-          toast({
-            title: "Uploading avatar",
-            description: "Please wait while we upload your avatar image..."
-          });
-          
-          avatarUrl = await convertBlobToS3Url(avatarUrl);
-          
-          toast({
-            title: "Avatar uploaded",
-            description: "Your avatar has been successfully uploaded to S3."
-          });
-        } catch (uploadError) {
-          console.error('Error uploading avatar to S3:', uploadError);
-          toast({
-            title: "Avatar upload failed",
-            description: "We couldn't upload your avatar. Using default avatar instead.",
-            variant: "destructive"
-          });
-          avatarUrl = ""; // Reset to empty if upload failed
-        }
-      } else if (avatarFile) {
-        // If we have a file object but no URL, upload directly
+      // Process avatar if needed
+      let avatarUrl = values.avatarUrl;
+      if (avatarFile) {
         try {
           toast({
             title: "Uploading avatar",
@@ -245,37 +218,32 @@ export function CreateCharacterForm({
             description: "We couldn't upload your avatar. Using default avatar instead.",
             variant: "destructive"
           });
-          avatarUrl = ""; // Reset to empty if upload failed
         }
       }
-
-      // Construct the character data in the right format
-      const characterDetails = {
-        id: characterId,
+      
+      // Format the character data
+      const characterData = {
         name: values.name,
-        bio: bioArray,
-        lore: loreArray,
-        style: values.style,
-        people: [],
-        topics: values.topics,
-        adjectives: values.adjectives,
-        clients: values.clients,
-        plugins: values.plugins.map(plugin => ({
-          name: plugin,
-          // This is simplified - in a real implementation we'd include proper plugin configs
-          actions: [],
-          clients: [],
-          services: [],
-          providers: [],
-          evaluators: [],
-          description: `${plugin} functionality`
-        })),
+        bio: Array.isArray(values.bio) ? values.bio : values.bio.split('\n').filter((line: string) => line.trim() !== ''),
+        lore: values.lore ? (Array.isArray(values.lore) ? values.lore : values.lore.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        style: {
+          all: Array.isArray(values.style.all) ? values.style.all : values.style.all.split('\n').filter((line: string) => line.trim() !== ''),
+          chat: Array.isArray(values.style.chat) ? values.style.chat : values.style.chat.split('\n').filter((line: string) => line.trim() !== ''),
+          post: Array.isArray(values.style.post) ? values.style.post : values.style.post.split('\n').filter((line: string) => line.trim() !== '')
+        },
+        topics: values.topics ? (Array.isArray(values.topics) ? values.topics : values.topics.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        adjectives: values.adjectives ? (Array.isArray(values.adjectives) ? values.adjectives : values.adjectives.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        avatarUrl,
+        clients: values.clients || ['direct', 'auto'],
+        plugins: values.plugins || [],
+        knowledge: values.knowledge ? (Array.isArray(values.knowledge) ? values.knowledge : values.knowledge.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        templates: values.templates || {},
+        modelProvider: "openai",
         settings: {
+          ragKnowledge: false,
           voice: {
             model: "en_US-female-medium"
           },
-          secrets: {},
-          ragKnowledge: knowledgeFiles.length > 0,
           imageSettings: {
             steps: 20,
             width: 1024,
@@ -283,67 +251,36 @@ export function CreateCharacterForm({
             modelId: "FLUX.1-dev",
             modelProvider: "heurist"
           }
-        },
-        knowledge: values.knowledge,
-        templates: values.templates,
-        postExamples: [],
-        modelProvider: "anthropic",
-        messageExamples: [
-          [
-            {
-              user: "{{user1}}",
-              content: {
-                text: `Hello ${values.name}, can you introduce yourself?`
-              }
-            },
-            {
-              user: values.name,
-              content: {
-                text: `Hi there! I'm ${values.name}. ${bioArray[0] || 'Nice to meet you!'}`
-              }
-            }
-          ]
-        ],
-        imageModelProvider: "heurist",
-        imageVisionModelProvider: "openai"
+        }
       };
       
-      // Create character in Supabase accounts table
-      const supabase = await createSupabaseClient();
+      const characterId = await createCharacter(characterData);
       
-      const { error } = await supabase
-        .from('accounts')
-        .insert({
-          id: characterId,
-          name: values.name,
-          email: `${characterId}`, // Using the ID as email since it's required
-          avatarUrl: avatarUrl,
-          details: characterDetails,
-          user_id: user.id
+      if (characterId) {
+        toast({
+          title: "Character created",
+          description: `Successfully created character: ${values.name}`,
         });
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: "Character created",
-        description: `${values.name} has been created successfully!`
-      });
-      
-      // Call the success callback
-      if (onSuccess) {
-        onSuccess();
+        
+        // Invalidate character queries to refresh the list
+        queryClient.invalidateQueries({ queryKey: ["userCharacters"] });
+        
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        // Navigate to the home page if no callback provided
-        navigate({ to: "/" });
+        toast({
+          title: "Error creating character",
+          description: "Failed to create character. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Error creating character:', error);
+      console.error('Error in form submission:', error);
       toast({
-        title: "Failed to create character",
-        description: `There was an error creating your character: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive"
+        title: "Error creating character",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -398,7 +335,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="name"
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Character Name</FormLabel>
               <FormControl>
@@ -412,7 +349,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="avatarUrl"
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <FileUpload
               label="Avatar"
               description="Upload an image or provide a URL"
@@ -427,7 +364,7 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="bio"
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Character Bio</FormLabel>
               <FormControl>
@@ -448,18 +385,18 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="lore"
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Character Lore (Optional)</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Add background stories and interesting facts about your character. Each line will be treated as a separate piece of lore."
-                  rows={6}
+                  placeholder="Add background stories, facts, or other lore for your character. Each line will be treated as a separate piece of lore."
+                  rows={4}
                   {...field}
                 />
               </FormControl>
               <FormDescription>
-                Enter each piece of lore on a new line. These add depth to your character's backstory.
+                Optional background information that adds depth to your character
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -475,26 +412,22 @@ export function CreateCharacterForm({
           <FormField
             control={form.control}
             name="style.all"
-            render={({ field }: { field: any }) => (
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>General Style (applies to all contexts)</FormLabel>
+                <FormLabel>General Style Traits</FormLabel>
                 <FormControl>
-                  <MultiSelect
-                    options={[
-                      { label: "uses plain english", value: "uses plain english" },
-                      { label: "friendly and helpful", value: "friendly and helpful" },
-                      { label: "formal", value: "formal" },
-                      { label: "casual", value: "casual" },
-                      { label: "technical", value: "technical" },
-                    ]}
-                    selected={field.value}
-                    onChange={field.onChange}
-                    allowUserInput={true}
-                    placeholder="Select or enter style traits..."
+                  <Textarea
+                    placeholder="Add general style traits for your character. Each line will be treated as a separate trait."
+                    rows={3}
+                    value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                    onChange={(e) => {
+                      const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                      field.onChange(lines);
+                    }}
                   />
                 </FormControl>
                 <FormDescription>
-                  These style traits apply in all communication contexts
+                  These style traits apply to all contexts
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -504,26 +437,22 @@ export function CreateCharacterForm({
           <FormField
             control={form.control}
             name="style.chat"
-            render={({ field }: { field: any }) => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Chat Style</FormLabel>
                 <FormControl>
-                  <MultiSelect
-                    options={[
-                      { label: "conversational", value: "conversational" },
-                      { label: "engaging", value: "engaging" },
-                      { label: "brief", value: "brief" },
-                      { label: "detailed", value: "detailed" },
-                      { label: "inquisitive", value: "inquisitive" },
-                    ]}
-                    selected={field.value}
-                    onChange={field.onChange}
-                    allowUserInput={true}
-                    placeholder="Select or enter chat style traits..."
+                  <Textarea
+                    placeholder="Add chat style traits for your character. Each line will be treated as a separate trait."
+                    rows={3}
+                    value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                    onChange={(e) => {
+                      const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                      field.onChange(lines);
+                    }}
                   />
                 </FormControl>
                 <FormDescription>
-                  These style traits apply specifically in chat/conversation contexts
+                  These style traits apply specifically in chat contexts
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -533,26 +462,22 @@ export function CreateCharacterForm({
           <FormField
             control={form.control}
             name="style.post"
-            render={({ field }: { field: any }) => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Post Style</FormLabel>
                 <FormControl>
-                  <MultiSelect
-                    options={[
-                      { label: "concise", value: "concise" },
-                      { label: "informative", value: "informative" },
-                      { label: "persuasive", value: "persuasive" },
-                      { label: "academic", value: "academic" },
-                      { label: "authoritative", value: "authoritative" },
-                    ]}
-                    selected={field.value}
-                    onChange={field.onChange}
-                    allowUserInput={true}
-                    placeholder="Select or enter post style traits..."
+                  <Textarea
+                    placeholder="Add post style traits for your character. Each line will be treated as a separate trait."
+                    rows={3}
+                    value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                    onChange={(e) => {
+                      const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                      field.onChange(lines);
+                    }}
                   />
                 </FormControl>
                 <FormDescription>
-                  These style traits apply specifically in content posting contexts
+                  These style traits apply when posting on social media
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -563,16 +488,18 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="topics"
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Topics of Interest</FormLabel>
               <FormControl>
-                <MultiSelect
-                  options={topicOptions}
-                  selected={field.value}
-                  onChange={field.onChange}
-                  allowUserInput={true}
-                  placeholder="Select or enter topics..."
+                <Textarea
+                  placeholder="Add topics your character is knowledgeable about. Each line will be treated as a separate topic."
+                  rows={4}
+                  value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                  onChange={(e) => {
+                    const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                    field.onChange(lines);
+                  }}
                 />
               </FormControl>
               <FormDescription>
@@ -586,20 +513,47 @@ export function CreateCharacterForm({
         <FormField
           control={form.control}
           name="adjectives"
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Character Adjectives</FormLabel>
               <FormControl>
-                <MultiSelect
-                  options={adjectiveOptions}
-                  selected={field.value}
-                  onChange={field.onChange}
-                  allowUserInput={true}
-                  placeholder="Select or enter adjectives..."
+                <Textarea
+                  placeholder="Add adjectives that describe your character. Each line will be treated as a separate adjective."
+                  rows={3}
+                  value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                  onChange={(e) => {
+                    const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                    field.onChange(lines);
+                  }}
                 />
               </FormControl>
               <FormDescription>
-                Words that describe your character's personality
+                Words that describe your character's personality and traits
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="knowledge"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Knowledge Base</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Add static knowledge for your character. Each line will be treated as a separate piece of knowledge."
+                  rows={4}
+                  value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                  onChange={(e) => {
+                    const lines = e.target.value.split('\n').filter(line => line.trim() !== '');
+                    field.onChange(lines);
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                Static knowledge that your character possesses
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -661,7 +615,7 @@ export function CreateCharacterForm({
       <FormField
         control={form.control}
         name="clients"
-        render={({ field }: { field: any }) => (
+        render={({ field }) => (
           <FormItem>
             <div className="grid grid-cols-1 gap-4">
               {clientOptions.map((client) => (
@@ -708,7 +662,7 @@ export function CreateCharacterForm({
       <FormField
         control={form.control}
         name="plugins"
-        render={({ field }: { field: any }) => (
+        render={({ field }) => (
           <FormItem>
             <div className="grid grid-cols-1 gap-4">
               {pluginOptions.map((plugin) => (

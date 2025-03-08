@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { createSupabaseClient, setupTokenRetrieval } from "@/lib/auth";
+import { createSupabaseClient, setupTokenRetrieval } from "@/lib/supabase-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { uploadToS3 } from "@/lib/s3";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { RefreshIcon } from "@/components/icons/refresh";
+import { updateCharacter, deleteCharacter } from '../lib/character-api';
 
 // UI Components
 import {
@@ -138,6 +142,7 @@ export function EditCharacterForm({
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -222,90 +227,95 @@ export function EditCharacterForm({
     setupAuth();
   }, [setupAuth]);
 
-  const handleSubmit = async (values: CharacterFormValues) => {
-    if (!isSignedIn) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to update your character.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
-
+    
     try {
-      // Create Supabase client
-      const supabase = await createSupabaseClient();
-      if (!supabase) {
-        throw new Error('Failed to initialize Supabase client');
-      }
-
-      // Handle avatar upload if there's a new file
-      let finalAvatarUrl = values.avatarUrl;
+      // Process avatar if needed
+      let avatarUrl = values.avatarUrl;
       if (avatarFile) {
         try {
-          const uploadedUrl = await uploadToS3(avatarFile);
-          finalAvatarUrl = uploadedUrl;
-        } catch (error) {
-          console.error('Avatar upload failed:', error);
+          toast({
+            title: "Uploading avatar",
+            description: "Please wait while we upload your avatar image..."
+          });
+          
+          avatarUrl = await uploadToS3(avatarFile, 'avatars');
+          
+          toast({
+            title: "Avatar uploaded",
+            description: "Your avatar has been successfully uploaded to S3."
+          });
+        } catch (uploadError) {
+          console.error('Error uploading avatar file to S3:', uploadError);
           toast({
             title: "Avatar upload failed",
-            description: "Failed to upload avatar image. Please try again.",
+            description: "We couldn't upload your avatar. Using default avatar instead.",
             variant: "destructive"
           });
-          return;
         }
       }
-
-      // Prepare the details object
-      const updatedDetails = {
-        ...character.details,
-        bio: values.bio.split('\n').filter(line => line.trim() !== ''),
-        lore: values.lore ? values.lore.split('\n').filter(line => line.trim() !== '') : [],
+      
+      // Format the character data
+      const characterData = {
         name: values.name,
-        style: values.style,
-        topics: values.topics,
-        adjectives: values.adjectives,
-        clients: values.clients,
-        plugins: values.plugins,
-        knowledge: values.knowledge,
-        templates: values.templates,
-        messageExamples: [
-          {
-            role: "assistant",
-            content: values.bio
+        bio: Array.isArray(values.bio) ? values.bio : values.bio.split('\n').filter((line: string) => line.trim() !== ''),
+        lore: values.lore ? (Array.isArray(values.lore) ? values.lore : values.lore.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        style: {
+          all: Array.isArray(values.style.all) ? values.style.all : values.style.all.split('\n').filter((line: string) => line.trim() !== ''),
+          chat: Array.isArray(values.style.chat) ? values.style.chat : values.style.chat.split('\n').filter((line: string) => line.trim() !== ''),
+          post: Array.isArray(values.style.post) ? values.style.post : values.style.post.split('\n').filter((line: string) => line.trim() !== '')
+        },
+        topics: values.topics ? (Array.isArray(values.topics) ? values.topics : values.topics.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        adjectives: values.adjectives ? (Array.isArray(values.adjectives) ? values.adjectives : values.adjectives.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        avatarUrl,
+        clients: values.clients || ['direct', 'auto'],
+        plugins: values.plugins || [],
+        knowledge: values.knowledge ? (Array.isArray(values.knowledge) ? values.knowledge : values.knowledge.split('\n').filter((line: string) => line.trim() !== '')) : [],
+        templates: values.templates || {},
+        modelProvider: "openai",
+        settings: {
+          ragKnowledge: false,
+          voice: {
+            model: "en_US-female-medium"
+          },
+          imageSettings: {
+            steps: 20,
+            width: 1024,
+            height: 1024,
+            modelId: "FLUX.1-dev",
+            modelProvider: "heurist"
           }
-        ]
+        }
       };
-
-      // Update character in Supabase
-      const { error } = await supabase
-        .from('accounts')
-        .update({
-          avatarUrl: finalAvatarUrl,
-          details: updatedDetails
-        })
-        .eq('id', character.id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "Character updated successfully"
-      });
-
-      if (onSuccess) {
-        onSuccess();
+      
+      const success = await updateCharacter(character.id, characterData);
+      
+      if (success) {
+        toast({
+          title: "Character updated",
+          description: `Successfully updated character: ${values.name}`,
+        });
+        
+        // Invalidate character queries to refresh the list
+        queryClient.invalidateQueries({ queryKey: ["userCharacters"] });
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        toast({
+          title: "Error updating character",
+          description: "Failed to update character. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Error updating character:', error);
+      console.error('Error in form submission:', error);
       toast({
-        title: "Update failed",
-        description: "Failed to update character. Please try again.",
-        variant: "destructive"
+        title: "Error updating character",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -313,135 +323,37 @@ export function EditCharacterForm({
   };
   
   const handleDeleteCharacter = async () => {
-    console.log('=== DELETE OPERATION STARTED ===');
-    console.log('Attempting to delete character:', character);
-    
-    if (!isSignedIn || !user) {
-      console.error('Authentication check failed:', { isSignedIn, user });
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to delete the character",
-        variant: "destructive"
-      });
-      return;
-    }
+    setIsDeleting(true);
     
     try {
-      setIsDeleting(true);
-      setShowDeleteDialog(false);
+      const success = await deleteCharacter(character.id);
       
-      if (!character.id) {
-        throw new Error('Character ID is missing');
-      }
-      
-      console.log('Creating Supabase client');
-      const supabase = await createSupabaseClient();
-      
-      // Log available tables
-      console.log('Checking database tables...');
-      const { data: tables, error: tablesError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public');
-      
-      console.log('Available tables:', tables);
-      if (tablesError) {
-        console.error('Error fetching tables:', tablesError);
-      }
-      
-      // Try to delete from accounts table
-      console.log('Attempting to delete from accounts table...');
-      const { data: deleteData, error: deleteError } = await supabase
-        .from('accounts')
-        .delete()
-        .eq('id', character.id)
-        .select();
-      
-      console.log('Delete response:', { deleteData, deleteError });
-      
-      if (deleteError) {
-        throw deleteError;
-      }
-      
-      toast({
-        title: "Character deleted",
-        description: "Your character has been successfully deleted."
-      });
-      
-      setTimeout(() => {
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          navigate({ to: "/" });
-        }
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Delete operation failed:', error);
-      
-      // Try direct API call as fallback
-      try {
-        console.log('Attempting fallback deletion via direct API...');
-        
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Missing Supabase credentials');
-        }
-        
-        const token = await getToken();
-        console.log('Got auth token:', token ? 'Token present' : 'No token');
-        
-        if (!token) {
-          throw new Error('Failed to get authentication token');
-        }
-        
-        const response = await fetch(`${supabaseUrl}/rest/v1/accounts?id=eq.${character.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'apikey': supabaseKey,
-            'Prefer': 'return=representation'
-          }
-        });
-        
-        console.log('Direct API response:', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries())
-        });
-        
-        const responseText = await response.text();
-        console.log('Response body:', responseText);
-        
-        if (!response.ok) {
-          throw new Error(`API call failed with status ${response.status}`);
-        }
-        
+      if (success) {
         toast({
           title: "Character deleted",
-          description: "Your character has been successfully deleted."
+          description: `Successfully deleted character: ${character.name}`,
         });
         
-        setTimeout(() => {
-          if (onSuccess) {
-            onSuccess();
-          } else {
-            navigate({ to: "/" });
-          }
-        }, 2000);
+        // Invalidate character queries to refresh the list
+        queryClient.invalidateQueries({ queryKey: ["userCharacters"] });
         
-      } catch (fallbackError) {
-        console.error('Fallback deletion failed:', fallbackError);
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
         toast({
-          title: "Failed to delete character",
-          description: "Database error: " + (error instanceof Error ? error.message : "Unknown error"),
-          variant: "destructive"
+          title: "Error deleting character",
+          description: "Failed to delete character. Please try again.",
+          variant: "destructive",
         });
-        setShowDeleteDialog(true);
       }
+    } catch (error) {
+      console.error('Error deleting character:', error);
+      toast({
+        title: "Error deleting character",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -1030,13 +942,64 @@ export function EditCharacterForm({
           {isDeleting ? "Deleting..." : "Delete Character"}
         </Button>
         
-        <Button 
-          type="submit" 
-          form="character-form"
-          disabled={isSubmitting || templateEditMode !== null}
-        >
-          {isSubmitting ? "Saving..." : "Save Character"}
-        </Button>
+        <div className="flex justify-between mt-6">
+          <div></div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                try {
+                  // Manually reload character data
+                  setIsSubmitting(true);
+                  console.log("Manually refreshing character data...");
+                  
+                  // Force a reload of this specific character
+                  const updatedCharacter = await apiClient.getUserCharacter(character.id);
+                  if (updatedCharacter) {
+                    console.log("Manually reloaded character:", updatedCharacter);
+                    
+                    // Update form with the latest data
+                    form.reset({
+                      name: updatedCharacter.name,
+                      bio: Array.isArray(updatedCharacter.bio) ? updatedCharacter.bio.join('\n') : '',
+                      lore: Array.isArray(updatedCharacter.lore) ? updatedCharacter.lore.join('\n') : '',
+                      style: updatedCharacter.style || { all: [], chat: [], post: [] },
+                      topics: updatedCharacter.topics || [],
+                      adjectives: updatedCharacter.adjectives || [],
+                      avatarUrl: updatedCharacter.avatarUrl || '',
+                      clients: updatedCharacter.clients || [],
+                      plugins: updatedCharacter.plugins || [],
+                      knowledge: updatedCharacter.knowledge || [],
+                      templates: updatedCharacter.templates || {}
+                    });
+                    
+                    toast({
+                      title: "Refreshed",
+                      description: "Character data has been refreshed"
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error refreshing character data:", error);
+                  toast({
+                    title: "Refresh failed",
+                    description: "Failed to refresh character data. Please try again.",
+                    variant: "destructive"
+                  });
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              <RefreshIcon className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save changes"}
+            </Button>
+          </div>
+        </div>
         
         {showDeleteDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
