@@ -1,42 +1,119 @@
-import { createSupabaseClient } from './supabase-auth';
-import { Character, CharacterFormValues, CharacterSummary, validateCharacter } from '../types/character';
-import { SupabaseClient } from '@supabase/supabase-js';
-
-// Define types for Supabase data
-interface AccountRecord {
-  id: string;
-  name?: string;
-  avatarUrl?: string;
-  details?: any;
-  user_id?: string;
-  created_at: string;
-  updated_at: string;
-  is_agent: boolean;
-}
+import { createSupabaseClient, isAuthenticated } from './supabase-client';
+import { 
+  Character, 
+  CharacterFormValues, 
+  CharacterSummary, 
+  validateCharacter,
+  characterToSupabaseFormat,
+  supabaseToCharacter
+} from '../types/character';
 
 /**
- * Get all characters for the current user
+ * Get all characters from the database
+ * 
+ * Filtering logic:
+ * - Demo characters: Characters where id === email (shown in Demo Characters section)
+ * - User characters: Characters where user_id matches the logged-in user's ID (shown in Your Characters section)
+ * 
+ * Special cases:
+ * - If a character is both a demo character (id === email) and owned by the user (user_id matches),
+ *   it will be shown in the "Your Characters" section
  */
 export async function getCharacters(): Promise<CharacterSummary[]> {
   try {
+    console.log('Fetching characters...');
     const supabase = await createSupabaseClient();
-    if (!supabase) return [];
     
-    const { data, error } = await (supabase as SupabaseClient)
+    // Query accounts table - RLS policies will allow viewing all characters
+    const { data, error } = await supabase
       .from('accounts')
-      .select('id, name, avatarUrl, details, created_at, updated_at')
-      .eq('is_agent', true);
-      
-    if (error) throw error;
+      .select('id, name, avatarUrl, createdAt, updatedAt, email, user_id, details');
     
-    // Map the data to the CharacterSummary type
-    return (data as AccountRecord[]).map((item: AccountRecord) => ({
-      id: item.id,
-      name: item.name || (item.details?.name || 'Unnamed Character'),
-      avatarUrl: item.avatarUrl || item.details?.avatarUrl,
-      created_at: item.created_at,
-      updated_at: item.updated_at
-    }));
+    if (error) {
+      console.error('Supabase query error:', error);
+      throw error;
+    }
+    
+    console.log(`Found ${data?.length || 0} characters in database`);
+    
+    if (!data || data.length === 0) {
+      return [];
+    }
+    
+    // Get the current user's ID
+    const currentUserId = localStorage.getItem('userId');
+    console.log(`Current user ID: ${currentUserId}`);
+    
+    // Map the data to the CharacterSummary type with clear flags
+    return data.map(item => {
+      // Demo character: id === email (built-in ElizaOS characters)
+      const isBuiltIn = item.id === item.email;
+      
+      // User's own character: user_id matches current user ID
+      const isOwnedByUser = item.user_id === currentUserId;
+      
+      // Hard-code avatar URLs for demo characters
+      let avatarUrl = item.avatarUrl;
+      const lowerName = item.name?.toLowerCase() || '';
+      
+      // Default bio if none exists
+      let bio = item.details?.bio || [];
+      
+      // Check for Snoop with case-insensitive matching
+      if (lowerName === 'snoop' || lowerName.includes('snoop')) {
+        avatarUrl = '/snoop.jpg';
+        console.log(`  - Setting hard-coded avatar for Snoop: ${avatarUrl}`);
+        // Add bio if empty
+        if (bio.length === 0) {
+          bio = ["Rapper, entrepreneur, and cultural icon. Drop it like it's hot!"];
+        }
+      } 
+      // Check for D3g3n_eral with case-insensitive matching and handle variations
+      else if (lowerName === 'd3g3n_eral' || lowerName.includes('d3g3n') || lowerName.includes('degen')) {
+        avatarUrl = '/D3g3n_eral.jpg';
+        console.log(`  - Setting hard-coded avatar for D3g3n_eral: ${avatarUrl}`);
+        // Add bio if empty
+        if (bio.length === 0) {
+          bio = ["Action hero ready to kick butt and take names. I never back down from a challenge!"];
+        }
+      }
+      
+      console.log(`Character: ${item.name} (${item.id})`);
+      console.log(`  - email: ${item.email}`);
+      console.log(`  - user_id: ${item.user_id}`);
+      console.log(`  - currentUserId: ${currentUserId}`);
+      console.log(`  - isBuiltIn: ${isBuiltIn}`);
+      console.log(`  - isOwnedByUser: ${isOwnedByUser}`);
+      
+      // Determine which section this character should appear in
+      let displaySection = "Neither";
+      
+      if (isOwnedByUser && !isBuiltIn) {
+        // User-created characters that aren't built-in go to "Your Characters"
+        displaySection = "Your Characters";
+      } else if (isBuiltIn && !isOwnedByUser) {
+        // Built-in characters that aren't owned by the user go to "Demo Characters"
+        displaySection = "Demo Characters";
+      } else if (isBuiltIn && isOwnedByUser) {
+        // For characters that are both built-in and owned by the user,
+        // we prioritize showing them in "Your Characters"
+        displaySection = "Your Characters";
+      }
+      
+      console.log(`  - Will appear in: ${displaySection}`);
+      
+      return {
+        id: item.id,
+        name: item.name || 'Unnamed Character',
+        avatarUrl,
+        created_at: item.createdAt,
+        updated_at: item.updatedAt,
+        isBuiltIn,
+        isOwnedByUser,
+        // Include bio from details if available or use our hard-coded one
+        bio
+      };
+    });
   } catch (error) {
     console.error('Error fetching characters:', error);
     return [];
@@ -48,32 +125,22 @@ export async function getCharacters(): Promise<CharacterSummary[]> {
  */
 export async function getCharacter(characterId: string): Promise<Character | null> {
   try {
+    console.log(`Fetching character with ID: ${characterId}`);
     const supabase = await createSupabaseClient();
-    if (!supabase) return null;
     
-    const { data, error } = await (supabase as SupabaseClient)
+    // Query a single character by ID - RLS will ensure only owned records are accessible
+    const { data, error } = await supabase
       .from('accounts')
       .select('*')
       .eq('id', characterId)
-      .eq('is_agent', true)
       .single();
       
-    if (error) throw error;
-    if (!data) return null;
+    if (error) {
+      console.error('Supabase query error:', error);
+      throw error;
+    }
     
-    // Combine the account data with the details
-    const characterData = {
-      id: data.id,
-      name: data.name || '',
-      avatarUrl: data.avatarUrl,
-      ...data.details,
-      owner_id: data.user_id,
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
-    
-    // Validate the character data
-    return validateCharacter(characterData);
+    return supabaseToCharacter(data);
   } catch (error) {
     console.error('Error fetching character:', error);
     return null;
@@ -85,25 +152,37 @@ export async function getCharacter(characterId: string): Promise<Character | nul
  */
 export async function createCharacter(character: CharacterFormValues): Promise<string | null> {
   try {
+    console.log('Creating character:', character.name);
     const supabase = await createSupabaseClient();
-    if (!supabase) return null;
     
-    // Create a new account record with is_agent=true
-    const { data, error } = await (supabase as SupabaseClient)
+    // Generate a new UUID for the character
+    const id = crypto.randomUUID();
+    console.log('Generated UUID for new character:', id);
+    
+    // Convert character to Supabase format
+    const characterData = {
+      id, // Explicitly provide the UUID
+      ...characterToSupabaseFormat(character),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Standard Supabase insert pattern with explicitly provided ID
+    const { data, error } = await supabase
       .from('accounts')
-      .insert({
-        name: character.name,
-        avatarUrl: character.avatarUrl,
-        details: character,
-        is_agent: true
-      })
+      .insert(characterData)
       .select('id')
       .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating character:', error);
+      throw error;
+    }
+    
+    console.log('Successfully created character:', data);
     return data.id;
   } catch (error) {
-    console.error('Error creating character:', error);
+    console.error('Exception creating character:', error);
     return null;
   }
 }
@@ -113,21 +192,27 @@ export async function createCharacter(character: CharacterFormValues): Promise<s
  */
 export async function updateCharacter(characterId: string, character: CharacterFormValues): Promise<boolean> {
   try {
+    console.log(`Updating character ${characterId}`);
     const supabase = await createSupabaseClient();
-    if (!supabase) return false;
     
-    // Update the account record
-    const { error } = await (supabase as SupabaseClient)
+    // Convert character to Supabase format
+    const characterData = {
+      ...characterToSupabaseFormat(character),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Standard Supabase update pattern
+    const { error } = await supabase
       .from('accounts')
-      .update({
-        name: character.name,
-        avatarUrl: character.avatarUrl,
-        details: character
-      })
-      .eq('id', characterId)
-      .eq('is_agent', true);
+      .update(characterData)
+      .eq('id', characterId);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating character:', error);
+      throw error;
+    }
+    
+    console.log('Character updated successfully');
     return true;
   } catch (error) {
     console.error('Error updating character:', error);
@@ -140,17 +225,21 @@ export async function updateCharacter(characterId: string, character: CharacterF
  */
 export async function deleteCharacter(characterId: string): Promise<boolean> {
   try {
+    console.log(`Deleting character ${characterId}`);
     const supabase = await createSupabaseClient();
-    if (!supabase) return false;
     
-    // Delete the account record
-    const { error } = await (supabase as SupabaseClient)
+    // Standard Supabase delete pattern
+    const { error } = await supabase
       .from('accounts')
       .delete()
-      .eq('id', characterId)
-      .eq('is_agent', true);
+      .eq('id', characterId);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting character:', error);
+      throw error;
+    }
+    
+    console.log('Character deleted successfully');
     return true;
   } catch (error) {
     console.error('Error deleting character:', error);
@@ -159,20 +248,21 @@ export async function deleteCharacter(characterId: string): Promise<boolean> {
 }
 
 /**
- * Load a character for chat
+ * Load a character for chat (ElizaOS integration)
  */
 export async function loadCharacterForChat(characterId: string): Promise<boolean> {
   try {
-    // In a real implementation, we would call the ElizaOS API to load the character
     console.log(`Loading character ${characterId} for chat`);
-    
-    // This is just a placeholder - in a real implementation, we would make an API call
-    // to load the character data from the database and initialize it in ElizaOS
     const character = await getCharacter(characterId);
-    if (!character) return false;
     
-    // For now, we'll just log that we're loading the character
-    console.log(`Character ${character.name} loaded for chat`);
+    if (!character) {
+      console.error('Character not found');
+      return false;
+    }
+    
+    // TODO: Implement ElizaOS integration
+    // This would involve converting the character to ElizaOS format
+    // and loading it into the ElizaOS runtime
     
     return true;
   } catch (error) {
